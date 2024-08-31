@@ -1,12 +1,31 @@
-from stable_baselines3 import SAC
-from stable_baselines3.sac.policies import MlpPolicy
+from stable_baselines3 import PPO
 from TradingEnv import TradingEnv
-from StockData import StockData
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
+import pandas as pd
 
 
-TRAINING_ROUNDS = 8
+data = pd.read_csv('BTC_Hourly.csv')
+
+processed_data = pd.DataFrame(index=data.index)
+
+processed_data["Close"] = data["Close"]
+processed_data["Change"] = data["Close"].diff()
+processed_data["D_HL"] = data["High"] - data["Low"]
+
+for feature in processed_data.columns:
+    rolling_mean = processed_data[feature].rolling(window=20).mean()
+    rolling_std = processed_data[feature].rolling(window=20).std()
+
+    # Normalize the feature (subtract rolling mean, divide by rolling std dev)
+    processed_data[f'{feature}_Normalized'] = (processed_data[feature] - rolling_mean) / rolling_std
+
+processed_data.dropna(inplace=True)
+
+
+
+quit()
+
 
 sd = StockData("BTC-USD")
 df = sd.get_training_data().iloc[::-1]

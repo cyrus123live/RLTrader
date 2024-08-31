@@ -1,5 +1,4 @@
-from stable_baselines3 import SAC
-from stable_baselines3.sac.policies import MlpPolicy
+from stable_baselines3 import PPO
 from TradingEnv import TradingEnv
 from StockData import StockData
 import numpy as np
@@ -18,7 +17,7 @@ test_df = df.iloc[train_size:]
 
 test_env = TradingEnv(test_df)
 
-model = SAC.load("trading_model")
+model = PPO.load("trading_model")
 
 history = []
 
