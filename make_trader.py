@@ -1,8 +1,8 @@
 from stable_baselines3 import PPO
 from TradingEnv import TradingEnv
-from StockData import StockData
+import StockData
 
-env = TradingEnv({})
+env = TradingEnv(StockData.get_random_month())
 
 model = PPO("MlpPolicy", env, verbose=1)
 model.save("trading_model")

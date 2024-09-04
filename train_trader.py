@@ -3,46 +3,69 @@ from TradingEnv import TradingEnv
 import numpy as np
 import matplotlib.pyplot as plt 
 import pandas as pd
+import StockData
+import logging
+from stable_baselines3.common.monitor import Monitor
+
+def plot_history(history):
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+    ax.set_title('Stock Movement')
+    ax.plot([h["Close"] for h in history], label='Closing Price')
+
+    ax2.set_title("Portfolio Value")
+    ax2.plot([h["Portfolio_Value"] for h in history], label='Portfolio Value')
+
+    plt.show()
 
 
-data = pd.read_csv('BTC_Hourly.csv')
+test_data = StockData.get_test_data()
+test_env = Monitor(TradingEnv(test_data))
+def test_model(model):
+    history = []
+    obs, info = test_env.reset()
+    test_env.render()
+    for _ in range(test_data.shape[0] - 1):
+        action, _states = model.predict(obs, deterministic=True)
+        obs, reward, terminate, truncated, info = test_env.step(action)
+        history.append(test_env.render())
+        if terminate or truncated:
+            obs, info = test_env.reset()
 
-processed_data = pd.DataFrame(index=data.index)
+    logging.info(f"Finished evaluation, final render: {history[-1]}")
+    plot_history(history)
 
-processed_data["Close"] = data["Close"]
-processed_data["Change"] = data["Close"].diff()
-processed_data["D_HL"] = data["High"] - data["Low"]
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("trading_log.log"),
+        logging.StreamHandler()
+    ]
+)
 
-for feature in processed_data.columns:
-    rolling_mean = processed_data[feature].rolling(window=20).mean()
-    rolling_std = processed_data[feature].rolling(window=20).std()
+model = PPO.load("trading_model")
 
-    # Normalize the feature (subtract rolling mean, divide by rolling std dev)
-    processed_data[f'{feature}_Normalized'] = (processed_data[feature] - rolling_mean) / rolling_std
+# Counter to control evaluation frequency
+train_runs_before_eval = 10 
+current_run = 0
 
-processed_data.dropna(inplace=True)
+while True:
 
+    logging.info("Starting a new training iteration...")
 
+    data = StockData.get_random_month()
+    env = Monitor(TradingEnv(data))
 
-quit()
-
-
-sd = StockData("BTC-USD")
-df = sd.get_training_data().iloc[::-1]
-
-train_size = int(len(df) * 0.8)  # 80% of the data for training
-
-model = SAC.load("trading_model")
-
-# Split the data
-train_df = df.iloc[:train_size]
-
-for i in range(TRAINING_ROUNDS):
-
-    index = len(train_df) / TRAINING_ROUNDS
-
-    env = TradingEnv(train_df[int(index * i) : int(index * (i + 1))])
-
-    model.set_env(env)  # Set the model to the current environment
-    model.learn(total_timesteps=len(train_df) * 4)  # Train for a specified number of timesteps # TODO: replace train_df
+    model.set_env(env)
+    model.learn(total_timesteps=data.shape[0] - 1, progress_bar=True)
+        
     model.save("trading_model")
+
+    logging.info("Training complete, model saved successfully.")
+
+    # current_run += 1
+    # if current_run % train_runs_before_eval == 0:
+    #     logging.info(f"Running evaluation...")
+    #     test_model(model)

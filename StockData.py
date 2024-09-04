@@ -5,109 +5,44 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import math
+import random
 
-import sys
-import warnings
 
-if not sys.warnoptions:
-    warnings.simplefilter("ignore")
+def process_data(data):
 
-class StockData():
+    processed_data = pd.DataFrame(index=data.index)
 
-    def __init__(self, t):
-        self.TICKER = t
+    processed_data["Close"] = data["close"]
+    processed_data["Change"] = data["close"].diff()
+    processed_data["D_HL"] = data["high"] - data["low"]
 
-    def calculate_bollinger_bands(self, data, window=20, num_std=2):
-        # Calculate the simple moving average
-        data['BB_Middle'] = data['Close'].rolling(window=window).mean()
-        
-        # Calculate the standard deviation
-        rolling_std = data['Close'].rolling(window=window).std()
-        
-        # Calculate the upper and lower bands
-        data['BB_Upper'] = data['BB_Middle'] + (rolling_std * num_std)
-        data['BB_Lower'] = data['BB_Middle'] - (rolling_std * num_std)
-        
-        # Calculate the Bollinger Band width
-        data['BB_Width'] = (data['BB_Upper'] - data['BB_Lower']) / data['BB_Middle']
-        
-        # Calculate the Bollinger Band Percentage
-        data['BB_Percentage'] = (data['Close'] - data['BB_Lower']) / (data['BB_Upper'] - data['BB_Lower'])
+    for feature in processed_data.columns:
+        rolling_mean = processed_data[feature].rolling(window=20).mean()
+        rolling_std = processed_data[feature].rolling(window=20).std()
 
-    def calculate_stochastic(self, data, n=14, d=3):
-        # Assuming 'data' is a pandas DataFrame with 'high', 'low', and 'close' columns
-        low_min = data['Low'].rolling(window=n).min()
-        high_max = data['High'].rolling(window=n).max()
-        
-        # Calculate %K
-        data['%K'] = (data['Close'] - low_min) / (high_max - low_min) * 100
-        
-        # Calculate %D
-        data['%D'] = data['%K'].rolling(window=d).mean()
+        # Normalize the feature (subtract rolling mean, divide by rolling std dev)
+        processed_data[f'{feature}_Normalized'] = (processed_data[feature] - rolling_mean) / rolling_std
 
-    def calculate_rsi(self, data, n=14):
+    processed_data.dropna(inplace=True)
 
-        change = data["Close"].diff()
-        change.dropna(inplace=True)
+    return processed_data.between_time('07:00', '16:00')
 
-        # Create two copies of the Closing price Series
-        change_up = change.copy()
-        change_down = change.copy()
-        change_up[change_up<0] = 0
-        change_down[change_down>0] = 0
+def get_month(year, month):
+    data = pd.read_csv(f"spy_data/20{year:02d}-{month:02d}.csv", index_col="timestamp").iloc[::-1]
+    data.index = pd.to_datetime(data.index)
+    return process_data(data)
 
-        # Verify that we did not make any mistakes
-        change.equals(change_up+change_down)
+def get_random_month():
+    return get_month(random.randint(0, 23), random.randint(1, 12))
 
-        # Calculate the rolling average of average up and average down
-        avg_up = change_up.rolling(14).mean()
-        avg_down = change_down.rolling(14).mean().abs()
+def get_test_data():
+    frames = []
+    for i in range(1, 9):
+        frames.append(get_month(24, i))
+    return pd.concat(frames)
 
-        rsi = 100 * avg_up / (avg_up + avg_down)
-        data['RSI'] = rsi
-
-    def calculate_vwap(self, data):
-        v = data['Volume'].values
-        tp = (data['Low'] + data['Close'] + data['High']).div(3).values
-        vwap = pd.Series(index=data.index, data=np.cumsum(tp * v) / np.cumsum(v))
-        
-        data["VWAP"] = vwap
-
-    def get_training_data(self):
-
-        # Get the data of the stock
-        # apple = yf.Ticker(self.TICKER)
-
-        # Get the historical prices for Apple stock
-        # historical_prices = apple.history(period='max', interval='1m')
-        # del historical_prices["Dividends"]
-        # del historical_prices["Stock Splits"]
-
-        historical_prices = pd.read_csv('BTC_Hourly.csv')
-
-        self.calculate_rsi(historical_prices)
-        self.calculate_stochastic(historical_prices)
-        self.calculate_vwap(historical_prices)
-        self.calculate_bollinger_bands(historical_prices)
-        historical_prices['20_Avg'] = historical_prices['Close'].rolling(window=20).mean()
-        historical_prices['Price_Change'] = historical_prices['Close'].pct_change()
-
-        historical_prices.dropna(inplace=True)
-
-        features = ["Close", "Volume", "RSI", "20_Avg", "VWAP", "Price_Change", "BB_Upper", "BB_Lower", "BB_Width", "BB_Percentage"]
-        data = pd.DataFrame(index=historical_prices.index)
-
-        # Normalize each feature using a rolling window
-        for feature in features:
-            rolling_mean = historical_prices[feature].rolling(window=20).mean()
-            rolling_std = historical_prices[feature].rolling(window=20).std()
-
-            # Normalize the feature (subtract rolling mean, divide by rolling std dev)
-            data[f'{feature}'] = (historical_prices[feature] - rolling_mean) / rolling_std
-        data["Close_Not_Normalized"] = historical_prices["Close"]
-
-        # Replace inf with nan and then remove all rows with any nan's
-        data.replace([np.inf, -np.inf], np.nan, inplace=True) 
-        data.dropna(inplace=True)
-
-        return data
+def get_year(year):
+    frames = []
+    for i in range(1, 13):
+        frames.append(get_month(year, i))
+    return pd.concat(frames)

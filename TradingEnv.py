@@ -2,6 +2,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import pandas as pd
+import math
 
 class TradingEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -9,14 +10,13 @@ class TradingEnv(gym.Env):
     def __init__(self, df):
         super(TradingEnv, self).__init__()
 
-        self.starting_cash = 10000000
-        self.k = int(self.starting_cash / df['Close'].iloc[0]) # Maximum amount of stocks bought or sold each minute
-    
         self.df = df
         self.reward_range = (-np.inf, np.inf)
+
+        self.starting_cash = 10000000
+        self.k = int(self.starting_cash / df['Close'].iloc[0]) # Maximum amount of stocks bought or sold each minute
         
         self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
-        
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(5,), dtype=np.float32
         ) 
@@ -30,14 +30,18 @@ class TradingEnv(gym.Env):
         self.stock = 0 
         self.total_value = self.cash
 
-        self.last_sell_step = 0
-        self.last_buy_step = 0
+        self.c = 0
+        self.r = 0
+        self.r_bh = math.log(1-self.c)
+        self.last_action = 0
 
     def _get_obs(self):
-        current_row = self.df[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[self.current_step]
-        close = self.df.iloc[self.current_step]["Close"]
 
-        amount_held = float((self.stock * close) / (self.stock * close + self.cash))
+        current_row = self.df[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[self.current_step]
+        close = self.df["Close"].iloc[self.current_step]
+
+        # amount_held = float((self.stock * close) / (self.stock * close + self.cash))
+        amount_held = self.stock / self.k 
         cash_normalized = self.cash / self.starting_cash
         
         return np.array(current_row.tolist() + [amount_held, cash_normalized])
@@ -50,21 +54,31 @@ class TradingEnv(gym.Env):
 
         if action[0] > 0 and self.cash > 0: # buy
 
-            buyable_stocks = (self.cash) / (current_price * 1.004) # Note that this implies float stock amounts
+            # buyable_stocks = (self.cash) / (current_price * 1.004) 
+            buyable_stocks = (self.cash) / (current_price) 
 
             to_buy = min(buyable_stocks, self.k * action[0])
 
             self.stock += to_buy
-            self.cash -= to_buy * (current_price * 1.004)
+            # self.cash -= to_buy * (current_price * 1.004)
+            self.cash -= to_buy * current_price
             self.last_buy_step = self.current_step
+            self.last_action = 1
 
         elif action[0] < 0 and self.stock > 0: # sell
 
-            to_sell = min(self.stock, self.k * action[0] * -1)
+            # to_sell = min(self.stock, self.k * action[0] * -1)
 
-            self.stock -= to_sell
-            self.cash += to_sell * (current_price * 0.996)
-            self.last_sell_step = self.current_step
+            # self.stock -= to_sell
+            # # self.cash += to_sell * (current_price * 0.996)
+            # self.cash += to_sell * current_price
+            # self.last_sell_step = self.current_step
+            # self.last_action = -1
+            self.cash += self.stock * current_price
+            self.stock = 0
+
+        else:
+            self.last_action = 0
 
     def step(self, action):
         self._take_action(action)
@@ -76,9 +90,21 @@ class TradingEnv(gym.Env):
         new_price = self.df['Close'].iloc[self.current_step]
         new_total_value = self.cash + self.stock * new_price
 
-        reward = new_total_value - self.total_value * (2**-11) # reward scaling taken from https://github.com/AI4Finance-Foundation/FinRL-Meta/blob/master/meta/env_stock_trading/env_stock_trading.py
+        # Implementing compounded excess return reward function
+        r_f = 0.000041 / (60*6.5) # rough risk free rate is 1.5% per annum, or 0.000041 per day
+
+        self.r_bh += math.log(self.df.iloc[self.current_step]["Close"]) - math.log(self.df.iloc[self.current_step - 1]["Close"])
+
+        if self.last_action == 1:
+            self.r += math.log(self.df.iloc[self.current_step]["Close"]) - math.log(self.df.iloc[self.current_step - 1]["Close"])
+            self.r += math.log(1-self.c)
+        elif self.last_action == -1:
+            self.r += r_f
+            self.r += math.log(1-self.c)
+
+        reward = self.r - self.r_bh
+        # reward = new_total_value - self.total_value * (2**-11) # reward scaling taken from https://github.com/AI4Finance-Foundation/FinRL-Meta/blob/master/meta/env_stock_trading/env_stock_trading.py
         
-        # Update the total value and portfolio history
         self.total_value = new_total_value
 
         # Define whether the episode is finished
@@ -92,10 +118,14 @@ class TradingEnv(gym.Env):
         return obs, reward, terminated, truncated, info
 
     def reset(self, seed=None, options=None):
+
         self.cash = self.starting_cash
-        self.stock = 0
-        self.current_step = 0
+        self.stock = 0 
         self.total_value = self.cash
+        self.current_step = 0
+        self.r = 0
+        self.r_bh = math.log(1-self.c)
+        self.last_action = 0
         
         return self._get_obs(), {}
 
