@@ -33,7 +33,7 @@ def test_model(model):
 
     plot_history(history)
 
-test_model(PPO.load("trading_model Backup 1"))
+test_model(PPO.load("trading_model"))
 
 '''
 

@@ -30,9 +30,10 @@ class TradingEnv(gym.Env):
         self.stock = 0 
         self.total_value = self.cash
 
-        self.c = 0
+        self.c_selling = 0.005
+        self.c_buying = 0.005 # 0.5% fees
         self.r = 0
-        self.r_bh = math.log(1-self.c)
+        self.r_bh = math.log(1-self.c_buying)
         self.last_action = 0
 
     def _get_obs(self):
@@ -55,13 +56,13 @@ class TradingEnv(gym.Env):
         if action[0] > 0 and self.cash > 0: # buy
 
             # buyable_stocks = (self.cash) / (current_price * 1.004) 
-            buyable_stocks = (self.cash) / (current_price) 
+            buyable_stocks = (self.cash) / (current_price * (1 + self.c_buying)) 
 
             to_buy = min(buyable_stocks, self.k * action[0])
 
             self.stock += to_buy
-            # self.cash -= to_buy * (current_price * 1.004)
-            self.cash -= to_buy * current_price
+            self.cash -= to_buy * current_price * (1 + self.c_buying)
+
             self.last_buy_step = self.current_step
             self.last_action = 1
 
@@ -74,8 +75,11 @@ class TradingEnv(gym.Env):
             # self.cash += to_sell * current_price
             # self.last_sell_step = self.current_step
             # self.last_action = -1
-            self.cash += self.stock * current_price
+            self.cash += self.stock * current_price * (1 - self.c_selling)
             self.stock = 0
+
+            self.last_sell_step = self.current_step
+            self.last_action = -1 # This was commented out before?!
 
         else:
             self.last_action = 0
@@ -97,10 +101,10 @@ class TradingEnv(gym.Env):
 
         if self.last_action == 1:
             self.r += math.log(self.df.iloc[self.current_step]["Close"]) - math.log(self.df.iloc[self.current_step - 1]["Close"])
-            self.r += math.log(1-self.c)
+            self.r += math.log(1-self.c_buying)
         elif self.last_action == -1:
             self.r += r_f
-            self.r += math.log(1-self.c)
+            self.r += math.log(1-self.c_selling)
 
         reward = self.r - self.r_bh
         # reward = new_total_value - self.total_value * (2**-11) # reward scaling taken from https://github.com/AI4Finance-Foundation/FinRL-Meta/blob/master/meta/env_stock_trading/env_stock_trading.py
@@ -124,7 +128,7 @@ class TradingEnv(gym.Env):
         self.total_value = self.cash
         self.current_step = 0
         self.r = 0
-        self.r_bh = math.log(1-self.c)
+        self.r_bh = math.log(1-self.c_buying)
         self.last_action = 0
         
         return self._get_obs(), {}

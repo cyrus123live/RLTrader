@@ -1,11 +1,14 @@
 import yfinance as yf
 from datetime import datetime
+from datetime import date
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import math
 import random
+import requests
+import datetime as dt
 
 
 def process_data(data):
@@ -28,7 +31,10 @@ def process_data(data):
     return processed_data.between_time('07:00', '16:00')
 
 def get_month(year, month):
-    data = pd.read_csv(f"spy_data/20{year:02d}-{month:02d}.csv", index_col="timestamp").iloc[::-1]
+
+    folder_name = "spy_data"
+
+    data = pd.read_csv(f"{folder_name}/20{year:02d}-{month:02d}.csv", index_col="timestamp").iloc[::-1]
     data.index = pd.to_datetime(data.index)
     return process_data(data)
 
@@ -46,3 +52,19 @@ def get_year(year):
     for i in range(1, 13):
         frames.append(get_month(year, i))
     return pd.concat(frames)
+
+
+def get_current_data():
+
+    prices = yf.Ticker("SPY").history(period='max', interval='1m', prepost=True)
+    prices["close"] = prices["Close"]
+    prices["low"] = prices["Low"]
+    prices["high"] = prices["High"]
+
+    prices = prices[prices.index.day == int(dt.datetime.today().strftime("%d"))].iloc[:-1] # Get current date data
+
+    return process_data(prices)
+    
+
+print(get_current_data())
+print(get_random_month())
