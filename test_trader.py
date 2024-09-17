@@ -4,17 +4,79 @@ import StockData
 import numpy as np
 import matplotlib.pyplot as plt
 from stable_baselines3.common.monitor import Monitor
+import time
+import datetime
+import sqlite3 as sql
 
 def plot_history(history):
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+    plt.subplot(1, 2, 1)
 
-    ax.set_title('Stock Movement')
-    ax.plot([h["Close"] for h in history], label='Closing Price')
+    plt.title('Stock Movement')
+    plt.plot([h["Close"] for h in history], label='Closing Price')
 
-    ax2.set_title("Portfolio Value")
-    ax2.plot([h["Portfolio_Value"] for h in history], label='Portfolio Value')
+    plt.subplot(1, 2, 2)
+
+    plt.title("Portfolio Value")
+    plt.plot([h["Portfolio_Value"] for h in history], label='Portfolio Value')
 
     plt.show()
+
+test_data = StockData.get_test_data()
+model = PPO.load("trading_model Backup 1")
+k = 10000000 / test_data.iloc[0]["Close"]
+held = 0
+cash = 10000000
+history = []
+
+conn = sql.connect("RLTrader_Test.db")
+conn.execute("DROP TABLE trades")
+conn.execute('''
+    CREATE TABLE IF NOT EXISTS trades (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp REAL,
+        close REAL,
+        cash REAL,
+        action REAL,
+        held REAL
+    )'''
+)
+
+for i in range(test_data.shape[0]):
+
+    data = test_data.iloc[i]
+
+    # Obs: ["Close_Normalized", "Change_Normalized", "D_HL_Normalized", amount_held, cash_normalized]
+    #   Amount held is normalized to k, starting cash / first close price
+    #   Cash is normalized to starting cash 
+    #   Resets each month during training, each year in testing
+    obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].tolist() + [held / k, cash / 10000000])
+
+    action = model.predict(obs, deterministic=True)[0][0]
+
+    if action < 0:
+        cash += held * data["Close"]
+        held = 0
+    else:
+        to_buy = min(cash / data["Close"], action * k)
+        cash -= to_buy * data["Close"]
+        held += to_buy
+
+    history.append({"Portfolio_Value": cash + held * data["Close"], "Close": data["Close"], "Cash": cash, "Held": held})
+    conn.execute('''
+        INSERT INTO trades (timestamp, close, cash, action, held) VALUES (?, ?, ?, ?, ?) ''', (
+        data.name.timestamp(), # datetime.datetime.fromtimestamp() to reverse
+        data["Close"], 
+        cash, 
+        action, 
+        held
+    ))
+    conn.commit()
+
+plot_history(history)
+
+
+quit()
+
 
 test_data = StockData.get_test_data()
 # test_data = StockData.get_year(8)

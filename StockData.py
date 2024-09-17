@@ -65,6 +65,3 @@ def get_current_data():
 
     return process_data(prices)
     
-
-print(get_current_data())
-print(get_random_month())
