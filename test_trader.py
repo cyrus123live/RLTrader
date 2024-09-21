@@ -52,7 +52,10 @@ for i in range(test_data.shape[0]):
 
     history.append({"Portfolio_Value": cash + held * data["Close"], "Close": data["Close"], "Cash": cash, "Held": held})
 
-plot_history(history)
+if input("Plot history? (Y/n): ") == "Y":
+    plot_history(history)
+else:
+    print(f"Final Portfolio Value: {cash + held * test_data.iloc[-1]['Close']}")
 
 quit()
 
