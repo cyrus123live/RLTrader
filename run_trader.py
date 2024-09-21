@@ -13,6 +13,8 @@ from dotenv import load_dotenv
 
 STARTING_CASH = 100000
 EXAMPLE_CLOSE = 580
+MODEL_NAME = "trading_model Backup 1"
+
 
 load_dotenv()
 api_key = os.getenv("API_KEY")
@@ -77,7 +79,7 @@ def main():
         )'''
     )
 
-    model = PPO.load("trading_model Backup 1")
+    model = PPO.load(MODEL_NAME)
     k = STARTING_CASH / EXAMPLE_CLOSE
     held = get_position_quantity()
     cash = get_cash()

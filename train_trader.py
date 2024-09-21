@@ -7,6 +7,9 @@ import StockData
 import logging
 from stable_baselines3.common.monitor import Monitor
 
+
+MODEL_NAME = "trading_model"
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -17,7 +20,7 @@ logging.basicConfig(
     ]
 )
 
-model = PPO.load("trading_model")
+model = PPO.load(MODEL_NAME)
 
 # Counter to control evaluation frequency
 train_runs_before_eval = 10 
