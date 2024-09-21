@@ -10,6 +10,7 @@ import requests
 import os
 import sqlite3 as sql
 from dotenv import load_dotenv
+import pathlib
 
 STARTING_CASH = 100000
 EXAMPLE_CLOSE = 580
@@ -66,7 +67,7 @@ def buy(qty):
 
 def main():
 
-    conn = sql.connect("RLTrader.db")
+    conn = sql.connect(str(pathlib.Path().absolute()) + "/RLTrader.db")
     # conn.execute("DROP TABLE trades")
     conn.execute('''
         CREATE TABLE IF NOT EXISTS trades (
@@ -79,7 +80,7 @@ def main():
         )'''
     )
 
-    model = PPO.load(MODEL_NAME)
+    model = PPO.load(str(pathlib.Path().absolute()) + "/" + MODEL_NAME)
     k = STARTING_CASH / EXAMPLE_CLOSE
     held = get_position_quantity()
     cash = get_cash()
