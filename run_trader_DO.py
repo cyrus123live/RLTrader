@@ -67,7 +67,7 @@ def buy(qty):
 
 def main():
 
-    conn = sql.connect("~/RLTrader/RLTrader.db")
+    conn = sql.connect("root/RLTrader/RLTrader.db")
     # conn.execute("DROP TABLE trades")
     conn.execute('''
         CREATE TABLE IF NOT EXISTS trades (
@@ -80,7 +80,7 @@ def main():
         )'''
     )
 
-    model = PPO.load("~/RLTrader/" + MODEL_NAME)
+    model = PPO.load("root/RLTrader/" + MODEL_NAME)
     k = STARTING_CASH / EXAMPLE_CLOSE
     held = get_position_quantity()
     cash = get_cash()
