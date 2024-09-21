@@ -7,34 +7,6 @@ import StockData
 import logging
 from stable_baselines3.common.monitor import Monitor
 
-def plot_history(history):
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-
-    ax.set_title('Stock Movement')
-    ax.plot([h["Close"] for h in history], label='Closing Price')
-
-    ax2.set_title("Portfolio Value")
-    ax2.plot([h["Portfolio_Value"] for h in history], label='Portfolio Value')
-
-    plt.show()
-
-
-test_data = StockData.get_test_data()
-test_env = Monitor(TradingEnv(test_data))
-def test_model(model):
-    history = []
-    obs, info = test_env.reset()
-    test_env.render()
-    for _ in range(test_data.shape[0] - 1):
-        action, _states = model.predict(obs, deterministic=True)
-        obs, reward, terminate, truncated, info = test_env.step(action)
-        history.append(test_env.render())
-        if terminate or truncated:
-            obs, info = test_env.reset()
-
-    logging.info(f"Finished evaluation, final render: {history[-1]}")
-    plot_history(history)
-
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,

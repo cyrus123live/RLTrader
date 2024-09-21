@@ -22,24 +22,24 @@ def plot_history(history):
     plt.show()
 
 test_data = StockData.get_test_data()
-model = PPO.load("trading_model Backup 1")
+model = PPO.load("trading_model")
 k = 10000000 / test_data.iloc[0]["Close"]
 held = 0
 cash = 10000000
 history = []
 
-conn = sql.connect("RLTrader_Test.db")
-conn.execute("DROP TABLE trades")
-conn.execute('''
-    CREATE TABLE IF NOT EXISTS trades (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        timestamp REAL,
-        close REAL,
-        cash REAL,
-        action REAL,
-        held REAL
-    )'''
-)
+# conn = sql.connect("RLTrader_Test.db")
+# conn.execute("DROP TABLE trades")
+# conn.execute('''
+#     CREATE TABLE IF NOT EXISTS trades (
+#         id INTEGER PRIMARY KEY AUTOINCREMENT,
+#         timestamp REAL,
+#         close REAL,
+#         cash REAL,
+#         action REAL,
+#         held REAL
+#     )'''
+# )
 
 for i in range(test_data.shape[0]):
 
@@ -62,15 +62,15 @@ for i in range(test_data.shape[0]):
         held += to_buy
 
     history.append({"Portfolio_Value": cash + held * data["Close"], "Close": data["Close"], "Cash": cash, "Held": held})
-    conn.execute('''
-        INSERT INTO trades (timestamp, close, cash, action, held) VALUES (?, ?, ?, ?, ?) ''', (
-        data.name.timestamp(), # datetime.datetime.fromtimestamp() to reverse
-        data["Close"], 
-        cash, 
-        action, 
-        held
-    ))
-    conn.commit()
+    # conn.execute('''
+    #     INSERT INTO trades (timestamp, close, cash, action, held) VALUES (?, ?, ?, ?, ?) ''', (
+    #     data.name.timestamp(), # datetime.datetime.fromtimestamp() to reverse
+    #     data["Close"], 
+    #     cash, 
+    #     action, 
+    #     held
+    # ))
+    # conn.commit()
 
 plot_history(history)
 
