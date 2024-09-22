@@ -92,11 +92,15 @@ def main():
         time.sleep(1)
         current_time = datetime.datetime.now()
 
-        if current_time.hour > 13 or (current_time.hour == 13 and current_time.minute >= 1):
+        if current_time.weekday() == 5 or current_time.weekday() == 6:
+            print("It is the weekend, ending trader session.")
+            quit()
+
+        if current_time.hour > 17 or (current_time.hour == 17 and current_time.minute >= 1):
             print("Trading day over, ending trader session.")
             quit()
 
-        if current_time.hour < 7:
+        if current_time.hour < 8:
             continue
 
         if current_time.second == 1: # every 1st second of each minute
