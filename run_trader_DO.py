@@ -96,11 +96,11 @@ def main():
             print("It is the weekend, ending trader session.")
             quit()
 
-        if current_time.hour > 17 or (current_time.hour == 17 and current_time.minute >= 1):
+        if current_time.hour > 19 or (current_time.hour == 19 and current_time.minute >= 1):
             print("Trading day over, ending trader session.")
             quit()
 
-        if current_time.hour < 8:
+        if current_time.hour < 11:
             continue
 
         if current_time.second == 1: # every 1st second of each minute
