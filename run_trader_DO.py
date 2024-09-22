@@ -96,7 +96,7 @@ def main():
             print("It is the weekend, ending trader session.")
             quit()
 
-        if current_time.hour > 19 or (current_time.hour == 19 and current_time.minute >= 1):
+        if current_time.hour > 20 or (current_time.hour == 20 and current_time.minute >= 1):
             print("Trading day over, ending trader session.")
             quit()
 
