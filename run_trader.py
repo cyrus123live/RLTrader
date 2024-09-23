@@ -96,7 +96,7 @@ def main():
             print("Trading day over, ending trader session.")
             quit()
 
-        if current_time.hour < 7:
+        if current_time.hour < 4:
             continue
 
         if current_time.second == 1: # every 1st second of each minute

@@ -8,7 +8,7 @@ import time
 import datetime
 import sqlite3 as sql
 
-MODEL_NAME = "trading_model Backup 1"
+MODEL_NAME = "trading_model"
 
 def plot_history(history):
     plt.subplot(1, 2, 1)
