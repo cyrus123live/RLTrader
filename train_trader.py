@@ -22,13 +22,12 @@ model = PPO.load(MODEL_NAME)
 global steps
 steps = model.num_timesteps
 
-test_data = StockData.get_month(24, 8)
-test_env = Monitor(TradingEnv(test_data))
-def test_model():
+def test_model(test_data):
     history = []
     k = 10000000 / test_data.iloc[0]["Close"]
     cash = 10000000
     held = 0
+    test_env = Monitor(TradingEnv(test_data))
     for i in range(test_data.shape[0]):
 
         data = test_data.iloc[i]
@@ -62,24 +61,50 @@ class TensorboardCallback(BaseCallback):
         super().__init__(verbose)
         self.steps = 0
         self.plot_interval = 30000
+        self.plot_large_interval = 100000
 
     def _on_step(self):
         global steps 
         steps += 1
 
-        if steps == 1:
+        # Large test (8 months)
+        if steps % self.plot_large_interval == 0:
+            test = test_model(StockData.get_test_data())
+
             figure = plt.figure()
-            figure.add_subplot().plot(test_model()[1])
-            # Close the figure after logging it
-            self.logger.record("trajectory/stock_price", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
+            figure.add_subplot().plot(test[0])
+            self.logger.record("images/large_test", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
             plt.close()
+
+            if steps == self.plot_large_interval:
+                figure = plt.figure()
+                figure.add_subplot().plot(test[1])
+                self.logger.record("images/large_stock_price", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
+                plt.close()
         
-        if steps % self.plot_interval == 0:
+        # Small test (1 month)
+        elif steps % self.plot_interval == 0:
+            test = test_model(StockData.get_month(24, 8))
+
+            self.logger.record("Custom Metrics/Test Ending Value", test[0][-1])
+            self.logger.record("Custom Metrics/Test Lowest Value", min(test[0]))
+
+            mean = sum(test[0]) / len(test[0]) 
+            res = sum((i - mean) ** 2 for i in test[0]) / len(test[0]) 
+            self.logger.record("Custom Metrics/Test Variance", res)
+
             figure = plt.figure()
-            figure.add_subplot().plot(test_model()[0])
-            # Close the figure after logging it
-            self.logger.record("trajectory/figure", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
+            figure.add_subplot().plot(test[0])
+            
+            self.logger.record("images/small_test", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
             plt.close()
+
+            if steps == self.plot_interval:
+                figure = plt.figure()
+                figure.add_subplot().plot(test[1])
+                self.logger.record("images/small_stock_price", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
+                plt.close()
+
         return True
 
 

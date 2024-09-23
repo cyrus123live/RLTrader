@@ -8,23 +8,28 @@ import time
 import datetime
 import sqlite3 as sql
 
-MODEL_NAME = "trading_model"
+counter = 0
+with open("model_counter.txt", 'r') as f:
+    counter = int(f.read())
+
+MODEL_NAME = f"trading_model_{counter}"
+MODEL_NAME = f"trading_model Backup 2"
 
 def plot_history(history):
-    plt.subplot(1, 2, 1)
+    plt.subplot(2, 1, 1)
 
     plt.title('Stock Movement')
-    plt.plot([h["Close"] for h in history], label='Closing Price')
+    plt.plot([h["Close"] for h in history])
 
-    plt.subplot(1, 2, 2)
+    plt.subplot(2, 1, 2)
 
     plt.title("Portfolio Value")
-    plt.plot([h["Portfolio_Value"] for h in history], label='Portfolio Value')
+    plt.plot([h["Portfolio_Value"] for h in history])
 
     plt.show()
 
 test_data = StockData.get_test_data()
-model = PPO.load(f"{MODEL_NAME}")
+model = PPO.load(MODEL_NAME)
 k = 10000000 / test_data.iloc[0]["Close"]
 held = 0
 cash = 10000000
