@@ -32,6 +32,11 @@ def get_position():
     response = requests.get("https://paper-api.alpaca.markets/v2/positions", headers=headers)
     return response.json()
 
+def cancel_all():
+    headers = {"accept": "application/json", "APCA-API-KEY-ID": api_key, "APCA-API-SECRET-KEY": api_secret_key}
+    response = requests.delete("https://paper-api.alpaca.markets/v2/orders", headers=headers)
+    return response.json()
+
 def get_position_quantity():
     if len(get_position()) > 0:
         return float(get_position()[0]['qty'])
@@ -44,25 +49,26 @@ def get_position_value():
     else:
         return 0
 
-def make_order(qty, buy_or_sell):
+def make_order(qty, buy_or_sell, price):
 
     headers = {"accept": "application/json", "APCA-API-KEY-ID": api_key, "APCA-API-SECRET-KEY": api_secret_key}
     params = {
         'symbol': 'SPY',
         'qty': str(qty),
         'side': buy_or_sell, # "buy" or "sell"
-        'type': 'market',
+        'type': 'limit',
+        'limit_price': str(price),
         'time_in_force': 'day' # Note: experiment with this
     }
 
     response = requests.post("https://paper-api.alpaca.markets/v2/orders", headers=headers, json=params)
     return response.json()
 
-def sell_all():
-    return make_order(get_position_quantity(), "sell")
+def sell_all(price):
+    return make_order(get_position_quantity(), "sell", price)
 
-def buy(qty):
-    return make_order(qty, "buy")
+def buy(qty, price):
+    return make_order(qty, "buy", price)
 
 
 def main():
@@ -89,58 +95,72 @@ def main():
     
     while True:
 
-        time.sleep(1)
-        current_time = datetime.datetime.now()
+        try:
 
-        if current_time.weekday() == 5 or current_time.weekday() == 6:
-            print("It is the weekend, ending trader session.")
-            quit()
+            time.sleep(1)
+            current_time = datetime.datetime.now()
 
-        if current_time.hour > 20 or (current_time.hour == 20 and current_time.minute >= 1):
-            print("Trading day over, ending trader session.")
-            quit()
+            if current_time.weekday() == 5 or current_time.weekday() == 6:
+                print("It is the weekend, ending trader session.")
+                quit()
 
-        if current_time.hour < 11:
-            continue
+            if current_time.hour > 20 or (current_time.hour == 20 and current_time.minute >= 1):
+                print("Trading day over, ending trader session.")
+                quit()
 
-        if current_time.second == 1: # every 1st second of each minute
-            data = StockData.get_current_data()
-            if data.shape[0] == 0:
+            if current_time.hour < 11:
                 continue
-            # print(data)
 
-            # Obs: ["Close_Normalized", "Change_Normalized", "D_HL_Normalized", amount_held, cash_normalized]
-            #   Amount held is normalized to k, starting cash / first close price
-            #   Cash is normalized to starting cash 
-            #   Resets each month during training, each year in testing
-            obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
+            if current_time.second == 1: # every 1st second of each minute
+                try:
+                    data = StockData.get_current_data()
+                except Exception as e:
+                    print("Error in getting current data:", e)
+                    continue
 
-            action = model.predict(obs, deterministic=True)[0][0]
+                if data.shape[0] == 0:
+                    continue
 
-            if action < 0:
-                sell_all()
-                print(f"{current_time.hour}:{current_time.minute:02d} Executing Sell")
-            else:
-                to_buy = min(cash / data.iloc[-1]["Close"], action * k)
-                buy(to_buy)
-                print(f"{current_time.hour}:{current_time.minute:02d} Executing Buy {to_buy}")
+                # Obs: ["Close_Normalized", "Change_Normalized", "D_HL_Normalized", amount_held, cash_normalized]
+                #   Amount held is normalized to k, starting cash / first close price
+                #   Cash is normalized to starting cash 
+                #   Resets each month during training, each year in testing
+                obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
 
-            time.sleep(15)
+                action = model.predict(obs, deterministic=True)[0][0]
 
-            # Update database
-            cash = get_cash()
-            held = get_position_quantity()
+                if action < 0:
+                    sell_all(data['Close'].iloc[-1])
+                    print(f"{current_time.hour}:{current_time.minute:02d} Executed Sell at price {data['Close'].iloc[-1]}")
+                else:
+                    to_buy = min(cash / data.iloc[-1]["Close"], action * k)
+                    buy(to_buy, data['Close'].iloc[-1])
+                    print(f"{current_time.hour}:{current_time.minute:02d} Executed Buy {to_buy} at price {data['Close'].iloc[-1]}")
 
-            conn.execute('''
-                INSERT INTO trades (timestamp, close, cash, action, held) VALUES (?, ?, ?, ?, ?) ''', (
-                datetime.datetime.now().timestamp(), # datetime.datetime.fromtimestamp() to reverse
-                data.iloc[-1]["Close"], 
-                cash, 
-                float(action), 
-                held
-            ))
-            conn.commit()
-            print(f"Cash: {cash}, Held: {held}\n")
+                time.sleep(25)
+                cancel_all() # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
+                time.sleep(5)
+
+                # Update database
+                cash = get_cash()
+                held = get_position_quantity()
+
+                value = get_position_value()
+                print(f"New value of stock portfolio: {value}")
+
+                conn.execute('''
+                    INSERT INTO trades (timestamp, close, cash, action, held) VALUES (?, ?, ?, ?, ?) ''', (
+                    datetime.datetime.now().timestamp(), # datetime.datetime.fromtimestamp() to reverse
+                    data.iloc[-1]["Close"], 
+                    cash, 
+                    float(action), 
+                    held
+                ))
+                conn.commit()
+                print(f"Cash: {cash}, Held: {held}\n")
+
+        except Exception as e:
+            print("Failure in loop:", e)
 
 if __name__ == "__main__":
     main()

@@ -9,6 +9,8 @@ import math
 import random
 import requests
 import datetime as dt
+from dotenv import load_dotenv
+import os
 
 
 def process_data(data):
@@ -53,6 +55,9 @@ def get_year(year):
         frames.append(get_month(year, i))
     return pd.concat(frames)
 
+def get_day(year, month, day):
+    month = get_month(year, month)
+    return month[month.index.day == day]
 
 def get_current_data():
 
@@ -61,7 +66,30 @@ def get_current_data():
     prices["low"] = prices["Low"]
     prices["high"] = prices["High"]
 
-    prices = prices[prices.index.day == int(dt.datetime.today().strftime("%d"))].iloc[:-1] # Get current date data
+    prices = prices[prices.index.day == int(dt.datetime.today().strftime("%d"))] # Get current date data
 
     return process_data(prices)
     
+
+def get_current_alpaca():
+
+    load_dotenv()
+    api_key = os.getenv("API_KEY")
+    api_secret_key = os.getenv("API_SECRET_KEY")
+
+    url = "https://data.alpaca.markets/v2/stocks/bars?symbols=spy&timeframe=1Min&limit=3000&adjustment=raw&feed=sip&sort=asc"
+    headers = {"accept": "application/json", "APCA-API-KEY-ID": api_key, "APCA-API-SECRET-KEY": api_secret_key}
+
+    response = requests.get(url, headers=headers) 
+
+    data = pd.DataFrame.from_dict(response.json()['bars']['SPY'])
+
+    data['time'] = pd.to_datetime(data['t'], format='%Y-%m-%dT%H:%M:%SZ')
+    data['time'] = data['time'].dt.tz_localize('UTC').dt.tz_convert('America/New_York')
+    data = data.set_index('time')
+
+    data['close'] = data['c']
+    data['high'] = data['h']
+    data['low'] = data['l']
+
+    return process_data(data)

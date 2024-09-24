@@ -13,13 +13,16 @@ with open("model_counter.txt", 'r') as f:
     counter = int(f.read())
 
 MODEL_NAME = f"trading_model_{counter}"
-MODEL_NAME = f"trading_model Backup 2"
+MODEL_NAME = f"trading_model Backup 1"
+test_data = StockData.get_test_data()
 
 def plot_history(history):
+
     plt.subplot(2, 1, 1)
 
     plt.title('Stock Movement')
     plt.plot([h["Close"] for h in history])
+
 
     plt.subplot(2, 1, 2)
 
@@ -28,7 +31,6 @@ def plot_history(history):
 
     plt.show()
 
-test_data = StockData.get_test_data()
 model = PPO.load(MODEL_NAME)
 k = 10000000 / test_data.iloc[0]["Close"]
 held = 0
