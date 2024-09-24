@@ -23,7 +23,6 @@ def plot_history(history):
     plt.title('Stock Movement')
     plt.plot([h["Close"] for h in history])
 
-
     plt.subplot(2, 1, 2)
 
     plt.title("Portfolio Value")

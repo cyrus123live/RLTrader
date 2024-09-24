@@ -131,11 +131,14 @@ def main():
 
                 if action < 0:
                     sell_all(data['Close'].iloc[-1])
-                    print(f"{current_time.hour}:{current_time.minute:02d} Executed Sell at price {data['Close'].iloc[-1]}")
+                    print(f"{current_time.hour}:{current_time.minute:02d} Executed sell at price {data['Close'].iloc[-1]}")
                 else:
                     to_buy = min(cash / data.iloc[-1]["Close"], action * k)
-                    buy(to_buy, data['Close'].iloc[-1])
-                    print(f"{current_time.hour}:{current_time.minute:02d} Executed Buy {to_buy} at price {data['Close'].iloc[-1]}")
+                    if to_buy > 0:
+                        buy(to_buy, data['Close'].iloc[-1])
+                        print(f"{current_time.hour}:{current_time.minute:02d} Executed buy {to_buy} at price {data['Close'].iloc[-1]}")
+                    else:
+                        print("Tried to buy a negative amount")
 
                 time.sleep(25)
                 cancel_all() # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
