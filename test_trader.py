@@ -13,22 +13,8 @@ with open("model_counter.txt", 'r') as f:
     counter = int(f.read())
 
 MODEL_NAME = f"trading_model_{counter}"
-MODEL_NAME = f"trading_model Backup 1"
 test_data = StockData.get_test_data()
-
-def plot_history(history):
-
-    plt.subplot(2, 1, 1)
-
-    plt.title('Stock Movement')
-    plt.plot([h["Close"] for h in history])
-
-    plt.subplot(2, 1, 2)
-
-    plt.title("Portfolio Value")
-    plt.plot([h["Portfolio_Value"] for h in history])
-
-    plt.show()
+test_data = StockData.get_month(24, 1)
 
 model = PPO.load(MODEL_NAME)
 k = 10000000 / test_data.iloc[0]["Close"]
@@ -58,10 +44,15 @@ for i in range(test_data.shape[0]):
 
     history.append({"Portfolio_Value": cash + held * data["Close"], "Close": data["Close"], "Cash": cash, "Held": held})
 
-if input("Plot history? (Y/n): ") == "Y":
-    plot_history(history)
-else:
-    print(f"Final Portfolio Value: {cash + held * test_data.iloc[-1]['Close']}")
+f = plt.figure()
+f.set_figheight(8)
+f.set_figwidth(10)
+
+plt.plot([h["Close"]/history[0]["Close"] for h in history], label="Stock Movement")
+plt.plot([h["Portfolio_Value"]/history[0]['Portfolio_Value'] for h in history], label="Portfolio Value", color='tab:red')
+
+plt.legend()
+plt.show()
 
 quit()
 

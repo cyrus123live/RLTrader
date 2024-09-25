@@ -8,16 +8,26 @@ import logging
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.logger import Figure
+import json
 
 
 counter = 0
+info = ""
 with open("model_counter.txt", 'r') as f:
     counter = int(f.read())
+
+with open('model_info.txt', 'r') as f:
+    info = json.loads(f.read())
 
 MODEL_NAME = f"trading_model_{counter}"
 TIMESTEPS = 50000
 
 model = PPO.load(MODEL_NAME)
+best_result = 0
+
+if str(counter) in info:
+    best_result = info[str(counter)]['best_result']
+best_result_flag = False
 
 global steps
 steps = model.num_timesteps
@@ -61,7 +71,7 @@ class TensorboardCallback(BaseCallback):
         super().__init__(verbose)
         self.steps = 0
         self.plot_interval = 30000
-        self.plot_large_interval = 100000
+        self.plot_large_interval = 50000
 
     def _on_step(self):
         global steps 
@@ -69,6 +79,7 @@ class TensorboardCallback(BaseCallback):
 
         # Large test (8 months)
         if steps % self.plot_large_interval == 0:
+            print("Performing test...")
             test = test_model(StockData.get_test_data())
 
             figure = plt.figure()
@@ -76,34 +87,44 @@ class TensorboardCallback(BaseCallback):
             self.logger.record("images/large_test", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
             plt.close()
 
+            # Save graph of stock price if this is the first time testing 
             if steps == self.plot_large_interval:
                 figure = plt.figure()
                 figure.add_subplot().plot(test[1])
                 self.logger.record("images/large_stock_price", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
                 plt.close()
+
+            # Set best result flag for saving model
+            global best_result
+            global best_result_flag
+            if test[0][-1] > best_result:
+                best_result = test[0][-1]
+                best_result_flag = True
         
         # Small test (1 month)
-        elif steps % self.plot_interval == 0:
-            test = test_model(StockData.get_month(24, 8))
+        # elif steps % self.plot_interval == 0:
+        #     print("Performing small test")
+        #     test = test_model(StockData.get_month(24, 8))
 
-            self.logger.record("Custom Metrics/Test Ending Value", test[0][-1])
-            self.logger.record("Custom Metrics/Test Lowest Value", min(test[0]))
+        #     self.logger.record("Custom Metrics/Test Ending Value", test[0][-1])
+        #     self.logger.record("Custom Metrics/Test Lowest Value", min(test[0]))
 
-            mean = sum(test[0]) / len(test[0]) 
-            res = sum((i - mean) ** 2 for i in test[0]) / len(test[0]) 
-            self.logger.record("Custom Metrics/Test Variance", res)
+        #     mean = sum(test[0]) / len(test[0]) 
+        #     res = sum((i - mean) ** 2 for i in test[0]) / len(test[0]) 
+        #     self.logger.record("Custom Metrics/Test Variance", res)
 
-            figure = plt.figure()
-            figure.add_subplot().plot(test[0])
+        #     figure = plt.figure()
+        #     figure.add_subplot().plot(test[0])
             
-            self.logger.record("images/small_test", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
-            plt.close()
+        #     self.logger.record("images/small_test", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
+        #     plt.close()
 
-            if steps == self.plot_interval:
-                figure = plt.figure()
-                figure.add_subplot().plot(test[1])
-                self.logger.record("images/small_stock_price", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
-                plt.close()
+        #     # Save graph of stock price if this is the first time testing 
+        #     if steps == self.plot_interval:
+        #         figure = plt.figure()
+        #         figure.add_subplot().plot(test[1])
+        #         self.logger.record("images/small_stock_price", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
+        #         plt.close()
 
         return True
 
@@ -120,6 +141,17 @@ while True:
     callback=TensorboardCallback(), 
     reset_num_timesteps=False)
         
-    model.save(MODEL_NAME)
+    if best_result_flag:
+        best_result_flag = False
+        model.save(MODEL_NAME)
+
+        if str(counter) not in info:
+            info[str(counter)] = {}
+        info[str(counter)]['best_result'] = best_result
+        info[str(counter)]['steps'] = steps
+
+        print("model saved")
+        with open('model_info.txt', 'w') as f:
+            json.dump(info, f)
 
     logging.info("Training complete, model saved successfully.")
