@@ -7,6 +7,7 @@ from stable_baselines3.common.monitor import Monitor
 import time
 import datetime
 import sqlite3 as sql
+import pandas as pd
 
 counter = 0
 with open("model_counter.txt", 'r') as f:
@@ -14,7 +15,7 @@ with open("model_counter.txt", 'r') as f:
 
 MODEL_NAME = f"trading_model_{counter}"
 test_data = StockData.get_test_data()
-test_data = StockData.get_month(24, 1)
+# test_data = StockData.get_month(24, 4)
 
 model = PPO.load(MODEL_NAME)
 k = 10000000 / test_data.iloc[0]["Close"]
@@ -48,8 +49,12 @@ f = plt.figure()
 f.set_figheight(8)
 f.set_figwidth(10)
 
-plt.plot([h["Close"]/history[0]["Close"] for h in history], label="Stock Movement")
-plt.plot([h["Portfolio_Value"]/history[0]['Portfolio_Value'] for h in history], label="Portfolio Value", color='tab:red')
+plot = pd.DataFrame(index=test_data.index)
+plot['close'] = [h["Close"]/history[0]["Close"] for h in history]
+plot['portfolio'] = [h["Portfolio_Value"]/history[0]['Portfolio_Value'] for h in history]
+
+plt.plot(plot['close'], label="Stock Movement")
+plt.plot(plot['portfolio'], label="Portfolio Value", color='tab:red')
 
 plt.legend()
 plt.show()

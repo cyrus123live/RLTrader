@@ -60,7 +60,7 @@ def test_model(test_data):
 
         history.append({"Portfolio_Value": cash + held * data["Close"], "Close": data["Close"], "Cash": cash, "Held": held})
 
-    return [h["Portfolio_Value"] for h in history], [h["Close"] for h in history]
+    return history
 
 class TensorboardCallback(BaseCallback):
     """
@@ -80,25 +80,36 @@ class TensorboardCallback(BaseCallback):
         # Large test (8 months)
         if steps % self.plot_large_interval == 0:
             print("Performing test...")
-            test = test_model(StockData.get_test_data())
+
+            test_data = StockData.get_test_data()
+            history = test_model(test_data)
+
+            to_plot = pd.DataFrame(index=test_data.index)
+            to_plot['close'] = [h["Close"]/history[0]["Close"] for h in history]
+            to_plot['portfolio'] = [h["Portfolio_Value"]/history[0]['Portfolio_Value'] for h in history]
 
             figure = plt.figure()
-            figure.add_subplot().plot(test[0])
+            p = figure.add_subplot()
+
+            p.plot(to_plot['close'], label="Stock Movement")
+            p.plot(to_plot['portfolio'], label="Portfolio Value")
+            p.legend()
+
             self.logger.record("images/large_test", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
             plt.close()
 
             # Save graph of stock price if this is the first time testing 
-            if steps == self.plot_large_interval:
-                figure = plt.figure()
-                figure.add_subplot().plot(test[1])
-                self.logger.record("images/large_stock_price", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
-                plt.close()
+            # if steps == self.plot_large_interval:
+            #     figure = plt.figure()
+            #     figure.add_subplot().plot(test[1])
+            #     self.logger.record("images/large_stock_price", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
+            #     plt.close()
 
             # Set best result flag for saving model
             global best_result
             global best_result_flag
-            if test[0][-1] > best_result:
-                best_result = test[0][-1]
+            if history[-1]['Portfolio_Value'] > best_result:
+                best_result = history[-1]['Portfolio_Value']
                 best_result_flag = True
         
         # Small test (1 month)
