@@ -98,44 +98,12 @@ class TensorboardCallback(BaseCallback):
             self.logger.record("images/large_test", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
             plt.close()
 
-            # Save graph of stock price if this is the first time testing 
-            # if steps == self.plot_large_interval:
-            #     figure = plt.figure()
-            #     figure.add_subplot().plot(test[1])
-            #     self.logger.record("images/large_stock_price", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
-            #     plt.close()
-
             # Set best result flag for saving model
             global best_result
             global best_result_flag
             if history[-1]['Portfolio_Value'] > best_result:
                 best_result = history[-1]['Portfolio_Value']
                 best_result_flag = True
-        
-        # Small test (1 month)
-        # elif steps % self.plot_interval == 0:
-        #     print("Performing small test")
-        #     test = test_model(StockData.get_month(24, 8))
-
-        #     self.logger.record("Custom Metrics/Test Ending Value", test[0][-1])
-        #     self.logger.record("Custom Metrics/Test Lowest Value", min(test[0]))
-
-        #     mean = sum(test[0]) / len(test[0]) 
-        #     res = sum((i - mean) ** 2 for i in test[0]) / len(test[0]) 
-        #     self.logger.record("Custom Metrics/Test Variance", res)
-
-        #     figure = plt.figure()
-        #     figure.add_subplot().plot(test[0])
-            
-        #     self.logger.record("images/small_test", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
-        #     plt.close()
-
-        #     # Save graph of stock price if this is the first time testing 
-        #     if steps == self.plot_interval:
-        #         figure = plt.figure()
-        #         figure.add_subplot().plot(test[1])
-        #         self.logger.record("images/small_stock_price", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
-        #         plt.close()
 
         return True
 
