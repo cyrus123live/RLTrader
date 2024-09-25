@@ -14,7 +14,7 @@ from pathlib import Path
 
 STARTING_CASH = 100000
 EXAMPLE_CLOSE = 580
-MODEL_NAME = "trading_model Backup 1"
+MODEL_NAME = "models/trading_model Backup 1"
 
 
 load_dotenv()

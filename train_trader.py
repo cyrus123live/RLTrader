@@ -13,13 +13,13 @@ import json
 
 counter = 0
 info = ""
-with open("model_counter.txt", 'r') as f:
+with open("models/model_counter.txt", 'r') as f:
     counter = int(f.read())
 
-with open('model_info.txt', 'r') as f:
+with open('models/model_info.txt', 'r') as f:
     info = json.loads(f.read())
 
-MODEL_NAME = f"trading_model_{counter}"
+MODEL_NAME = f"models/trading_model_{counter}"
 TIMESTEPS = 50000
 
 model = PPO.load(MODEL_NAME)

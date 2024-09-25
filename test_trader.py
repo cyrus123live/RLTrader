@@ -10,10 +10,10 @@ import sqlite3 as sql
 import pandas as pd
 
 counter = 0
-with open("model_counter.txt", 'r') as f:
+with open("models/model_counter.txt", 'r') as f:
     counter = int(f.read())
 
-MODEL_NAME = f"trading_model_{counter}"
+MODEL_NAME = f"models/trading_model_{counter}"
 test_data = StockData.get_test_data()
 # test_data = StockData.get_month(24, 4)
 
