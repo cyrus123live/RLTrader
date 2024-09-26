@@ -13,14 +13,19 @@ counter = 0
 with open("models/model_counter.txt", 'r') as f:
     counter = int(f.read())
 
+FEES_PER_SHARE = 0.0035
+MINIMUM_FEE = 0.25
+
+STARTING_CASH = 100000
 MODEL_NAME = f"models/trading_model_{counter}"
+MODEL_NAME = f"models/trading_model_10"
 test_data = StockData.get_test_data()
-# test_data = StockData.get_month(24, 4)
+# test_data = StockData.get_day(24, 4, 1)
 
 model = PPO.load(MODEL_NAME)
-k = 10000000 / test_data.iloc[0]["Close"]
 held = 0
-cash = 10000000
+cash = STARTING_CASH
+k = STARTING_CASH / test_data.iloc[0]["Close"]
 history = []
 
 for i in range(test_data.shape[0]):
@@ -31,17 +36,32 @@ for i in range(test_data.shape[0]):
     #   Amount held is normalized to k, starting cash / first close price
     #   Cash is normalized to starting cash 
     #   Resets each month during training, each year in testing
-    obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].tolist() + [held / k, cash / 10000000])
+    obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].tolist() + [held / k, cash / STARTING_CASH])
 
     action = model.predict(obs, deterministic=True)[0][0]
 
-    if action < 0:
-        cash += held * data["Close"]
+    if action < 0 and cash + held * data["Close"] >= max(MINIMUM_FEE, FEES_PER_SHARE * held):
+        cash += held * data["Close"] - max(MINIMUM_FEE, FEES_PER_SHARE * held)
         held = 0
     else:
-        to_buy = min(cash / data["Close"], action * k)
-        cash -= to_buy * data["Close"]
-        held += to_buy
+        to_buy = action * k
+        while to_buy * data["Close"] + max(MINIMUM_FEE, FEES_PER_SHARE * to_buy) > cash:
+            to_buy -= 1
+        if to_buy < 0:
+            to_buy = 0
+
+        if to_buy != 0:
+            cash -= to_buy * data["Close"] + max(MINIMUM_FEE, FEES_PER_SHARE * to_buy)
+            held += to_buy
+
+    # 0.1% fees
+    # if action < 0:
+    #     cash += held * data["Close"] * 0.999
+    #     held = 0
+    # else:
+    #     to_buy = min(cash / data["Close"] * 1.001, action * k)
+    #     cash -= to_buy * data["Close"] * 1.001
+    #     held += to_buy
 
     history.append({"Portfolio_Value": cash + held * data["Close"], "Close": data["Close"], "Cash": cash, "Held": held})
 

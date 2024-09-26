@@ -130,7 +130,7 @@ while True:
         info[str(counter)]['steps'] = steps
 
         print("model saved")
-        with open('model_info.txt', 'w') as f:
+        with open('models/model_info.txt', 'w') as f:
             json.dump(info, f)
 
     logging.info("Training complete, model saved successfully.")
