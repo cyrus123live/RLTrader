@@ -141,7 +141,7 @@ def main():
                     else:
                         print("Tried to buy a negative amount")
                 else:
-                    print("Holding...")
+                    print(f"{current_time.hour}:{current_time.minute:02d} Holding at price {round(data['Close'].iloc[-1], 2)}")
 
                 time.sleep(25)
                 cancel_all() # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
