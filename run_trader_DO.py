@@ -12,7 +12,7 @@ import sqlite3 as sql
 from dotenv import load_dotenv
 from pathlib import Path
 
-STARTING_CASH = 100000
+STARTING_CASH = 100000 / 100
 EXAMPLE_CLOSE = 580
 MODEL_NAME = "models/trading_model Backup 1"
 
@@ -89,7 +89,7 @@ def main():
     model = PPO.load("/root/RLTrader/" + MODEL_NAME)
     k = STARTING_CASH / EXAMPLE_CLOSE
     held = get_position_quantity()
-    cash = get_cash()
+    cash = get_cash()  / 100
 
     print(f"Starting trader session, cash: {cash}, held: {held}\n")
     
@@ -145,7 +145,7 @@ def main():
                 time.sleep(5)
 
                 # Update database
-                cash = get_cash()
+                cash = get_cash()  / 100
                 held = get_position_quantity()
 
                 value = get_position_value()
@@ -155,7 +155,7 @@ def main():
                     INSERT INTO trades (timestamp, close, cash, action, held) VALUES (?, ?, ?, ?, ?) ''', (
                     datetime.datetime.now().timestamp(), # datetime.datetime.fromtimestamp() to reverse
                     data.iloc[-1]["Close"], 
-                    cash, 
+                    cash * 100, 
                     float(action), 
                     held
                 ))
