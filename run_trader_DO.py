@@ -130,16 +130,18 @@ def main():
 
                 action = model.predict(obs, deterministic=True)[0][0]
 
-                if action < 0:
+                if action < 0 and held > 0:
                     print(sell_all(round(data['Close'].iloc[-1], 2)), "\n\n")
                     print(f"{current_time.hour}:{current_time.minute:02d} Executed sell at price {round(data['Close'].iloc[-1], 2)}")
-                else:
+                elif action > 0:
                     to_buy = min(cash / data.iloc[-1]["Close"], action * k)
                     if to_buy > 0:
                         print(buy(to_buy, round(data['Close'].iloc[-1], 2)), "\n\n")
                         print(f"{current_time.hour}:{current_time.minute:02d} Executed buy {to_buy} at price {round(data['Close'].iloc[-1], 2)}")
                     else:
                         print("Tried to buy a negative amount")
+                else:
+                    print("Holding...")
 
                 time.sleep(25)
                 cancel_all() # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
