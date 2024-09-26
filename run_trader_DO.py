@@ -131,13 +131,13 @@ def main():
                 action = model.predict(obs, deterministic=True)[0][0]
 
                 if action < 0:
-                    print(sell_all(data['Close'].iloc[-1]), "\n\n")
-                    print(f"{current_time.hour}:{current_time.minute:02d} Executed sell at price {data['Close'].iloc[-1]}")
+                    print(sell_all(round(data['Close'].iloc[-1]), 2), "\n\n")
+                    print(f"{current_time.hour}:{current_time.minute:02d} Executed sell at price {round(data['Close'].iloc[-1]), 2}")
                 else:
                     to_buy = min(cash / data.iloc[-1]["Close"], action * k)
                     if to_buy > 0:
-                        print(buy(to_buy, data['Close'].iloc[-1]), "\n\n")
-                        print(f"{current_time.hour}:{current_time.minute:02d} Executed buy {to_buy} at price {data['Close'].iloc[-1]}")
+                        print(buy(to_buy, round(data['Close'].iloc[-1]), 2), "\n\n")
+                        print(f"{current_time.hour}:{current_time.minute:02d} Executed buy {to_buy} at price {round(data['Close'].iloc[-1]), 2}")
                     else:
                         print("Tried to buy a negative amount")
 
