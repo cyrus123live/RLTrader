@@ -136,7 +136,7 @@ def main():
                 else:
                     to_buy = min(cash / data.iloc[-1]["Close"], action * k)
                     if to_buy > 0:
-                        print(buy(to_buy, round(data['Close'].iloc[-1], 2), "\n\n"))
+                        print(buy(to_buy, round(data['Close'].iloc[-1], 2)), "\n\n")
                         print(f"{current_time.hour}:{current_time.minute:02d} Executed buy {to_buy} at price {round(data['Close'].iloc[-1], 2)}")
                     else:
                         print("Tried to buy a negative amount")
