@@ -10,5 +10,8 @@ with open("models/model_counter.txt", 'w') as f:
 
 env = TradingEnv(StockData.get_random_month())
 
-model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=f"./tensorboard_logs/{counter + 1}/")
+model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=f"./tensorboard_logs/{counter + 1}/", ent_coef = 0.01,
+                    n_steps = 2048,
+                    learning_rate = 0.00025,
+                    batch_size = 128)
 model.save(f"models/trading_model_{counter + 1}")

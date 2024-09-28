@@ -18,7 +18,8 @@ class TradingEnv(gym.Env):
         
         self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
         self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(5,), dtype=np.float32
+            #low=-np.inf, high=np.inf, shape=(5,), dtype=np.float32 # Model 24 and below use this
+            low=-1, high=1, shape=(self.df[self.df.filter(regex='_Scaled$').columns].shape[1] + 2,), dtype=np.float32
         ) 
         
         # Set starting point
@@ -30,21 +31,24 @@ class TradingEnv(gym.Env):
         self.stock = 0 
         self.total_value = self.cash
 
-        self.c_selling = 0.005
-        self.c_buying = 0.005 # 0.5% fees
+        self.c_selling = 0
+        self.c_buying = 0 # 0.5% fees is 0.0005
         self.r = 0
         self.r_bh = math.log(1-self.c_buying)
         self.last_action = 0
 
     def _get_obs(self):
 
-        current_row = self.df[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[self.current_step]
+        # current_row = self.df[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[self.current_step] # Model 25 and below
+        current_row = self.df[self.df.filter(regex='_Scaled$').columns].iloc[self.current_step]
         close = self.df["Close"].iloc[self.current_step]
 
         # amount_held = float((self.stock * close) / (self.stock * close + self.cash))
-        amount_held = self.stock / self.k 
-        cash_normalized = self.cash / self.starting_cash
+        # amount_held = self.stock / self.k 
+        amount_held = np.clip(2 * self.stock / self.k - 1, -1, 1)
         
+        # cash_normalized = self.cash / self.starting_cash
+        cash_normalized = np.clip(2 * self.cash / self.starting_cash - 1, -1, 1)
         return np.array(current_row.tolist() + [amount_held, cash_normalized])
 
     def _take_action(self, action):

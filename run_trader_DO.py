@@ -71,6 +71,35 @@ def sell_all(price):
 def buy(qty, price):
     return make_order(qty, "buy", price)
 
+def end_trading_day(cash, held, starting_cash, starting_held, total_trades, missed_trades, data = StockData.get_current_data()):
+    conn = sql.connect("/root/RLTrader/RLTrader.db")
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS days (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp REAL,
+            open REAL,
+            close REAL,
+            ending_held REAL,
+            starting_held REAL,
+            ending_cash REAL,
+            starting_cash REAL,
+            total_trades REAL,
+            missed_trades REAL
+        )'''
+    )
+    conn.execute("INSERT INTO TRADES (timestamp, open, close, ending_held, starting_held, ending_cash, starting_cash, total_trades, missed_trades) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (
+        datetime.datetime.now().timestamp(),
+        data["Close"].iloc[0],
+        data["Close"].iloc[-1],
+        held,
+        starting_held,
+        cash,
+        starting_cash,
+        total_trades,
+        missed_trades
+    ))
+    conn.commit()
+
 
 def main():
 
@@ -92,6 +121,11 @@ def main():
     held = get_position_quantity()
     cash = get_cash()  / CASH_DIVISOR
 
+    missed_trades = 0
+    total_trades = 0
+    starting_cash = cash
+    starting_held = held
+
     print(f"Starting trader session, cash: {cash}, held: {held}\n")
     
     while True:
@@ -107,6 +141,8 @@ def main():
 
             if current_time.hour > 20 or (current_time.hour == 20 and current_time.minute >= 1):
                 print("Trading day over, ending trader session.")
+                end_trading_day(cash, held, starting_cash, starting_held, total_trades, missed_trades) # TODO: make sure this works
+                print("Trading day ended successfully.")
                 quit()
 
             if current_time.hour < 11:
@@ -131,9 +167,11 @@ def main():
                 action = model.predict(obs, deterministic=True)[0][0]
 
                 if action < 0 and held > 0:
+                    total_trades += 1
                     print(sell_all(round(data['Close'].iloc[-1], 2)), "\n\n")
                     print(f"{current_time.hour}:{current_time.minute:02d} Executed sell at price {round(data['Close'].iloc[-1], 2)}")
                 elif action > 0:
+                    total_trades += 1
                     to_buy = min(cash / data.iloc[-1]["Close"], action * k)
                     if to_buy > 0:
                         print(buy(to_buy, round(data['Close'].iloc[-1], 2)), "\n\n")
@@ -144,7 +182,8 @@ def main():
                     print(f"{current_time.hour}:{current_time.minute:02d} Holding at price {round(data['Close'].iloc[-1], 2)}")
 
                 time.sleep(25)
-                cancel_all() # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
+                if len(cancel_all()) > 0: # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
+                    missed_trades += 1 # Not yet sure if this will work 
                 time.sleep(5)
 
                 # Update database

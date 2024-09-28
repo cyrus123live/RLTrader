@@ -46,7 +46,8 @@ def test_model(test_data):
         #   Amount held is normalized to k, starting cash / first close price
         #   Cash is normalized to starting cash 
         #   Resets each month during training, each year in testing
-        obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].tolist() + [held / k, cash / 10000000])
+        # obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].tolist() + [held / k, cash / 10000000]) # Model 24 and below use this
+        obs = np.array(test_data[test_data.filter(regex='_Scaled$').columns].iloc[i].tolist() + [np.clip(2 * held / k - 1, -1, 1), np.clip(2 * cash / 10000000 - 1, -1, 1)])
 
         action = model.predict(obs, deterministic=True)[0][0]
 
@@ -112,8 +113,15 @@ while True:
 
     logging.info("Starting a new training iteration...")
 
-    data = StockData.get_random_month()
-    env = Monitor(TradingEnv(data))
+    # data = StockData.get_random_month_2020s() 
+    while True:
+        try:
+            data = StockData.get_random_month()
+            env = Monitor(TradingEnv(data))
+            break
+        except Exception as e:
+            continue
+
 
     model.set_env(env)
     model.learn(total_timesteps=data.shape[0] - 1, progress_bar=True, 
@@ -122,15 +130,16 @@ while True:
         
     if best_result_flag:
         best_result_flag = False
-        model.save(MODEL_NAME)
+        model.save(f"{MODEL_NAME}_{steps}")
 
         if str(counter) not in info:
             info[str(counter)] = {}
         info[str(counter)]['best_result'] = best_result
         info[str(counter)]['steps'] = steps
 
-        print("model saved")
+        print(f"Training complete, new best model saved successfully with score {best_result}")
         with open('models/model_info.txt', 'w') as f:
             json.dump(info, f)
 
+    model.save(MODEL_NAME)
     logging.info("Training complete, model saved successfully.")
