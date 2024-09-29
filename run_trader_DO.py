@@ -15,7 +15,7 @@ from pathlib import Path
 CASH_DIVISOR = 1
 STARTING_CASH = 100000 / CASH_DIVISOR
 EXAMPLE_CLOSE = 580
-MODEL_NAME = "models/trading_model Backup 1"
+MODEL_NAME = "models/trading_model_24"
 
 
 load_dotenv()

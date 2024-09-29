@@ -97,9 +97,9 @@ def process_data(data):
 
     # processed_data['SMA_20'] = processed_data['Close'].rolling(window=20).mean()
     # processed_data['EMA_20'] = processed_data['Close'].ewm(span=20, adjust=False).mean()
-    processed_data['RSI'] = calculate_rsi(processed_data)
+    # processed_data['RSI'] = calculate_rsi(processed_data)
     # processed_data['ATR'] = calculate_atr(processed_data)
-    processed_data['MACD'], processed_data['MACD_Signal'], _ = calculate_macd(processed_data)
+    # processed_data['MACD'], processed_data['MACD_Signal'], _ = calculate_macd(processed_data)
     # processed_data['Bollinger_Mid'], processed_data['Bollinger_Upper'], processed_data['Bollinger_Lower'] = calculate_bollinger_bands(processed_data)
     # processed_data['CCI'] = calculate_cci(processed_data)
     # processed_data['Williams_%R'] = calculate_williams_r(processed_data)
