@@ -87,7 +87,7 @@ def end_trading_day(cash, held, starting_cash, starting_held, total_trades, miss
             missed_trades REAL
         )'''
     )
-    conn.execute("INSERT INTO TRADES (timestamp, open, close, ending_held, starting_held, ending_cash, starting_cash, total_trades, missed_trades) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (
+    conn.execute("INSERT INTO days (timestamp, open, close, ending_held, starting_held, ending_cash, starting_cash, total_trades, missed_trades) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (
         datetime.datetime.now().timestamp(),
         data["Close"].iloc[0],
         data["Close"].iloc[-1],

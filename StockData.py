@@ -186,6 +186,12 @@ def get_test_data():
         frames.append(get_month(24, i))
     return pd.concat(frames)
 
+def get_random_train_data(num_months):
+    frames = []
+    for i in range(num_months):
+        frames.append(get_random_month())
+    return pd.concat(frames)
+
 def get_year(year):
     frames = []
     for i in range(1, 13):
