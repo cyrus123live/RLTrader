@@ -44,16 +44,16 @@
       options: {
         plugins: {
           annotation: {
-            {{for buy_index in buy_indexes}}
+            {{for buy_index in missed_buys}}
             annotations: {
               line1: {
                 type: 'line',
-                xMin: '2024-01-15',  // Example date or index for vertical line
-                xMax: '2024-01-15',
+                xMin: {{buy_index}},  // Example date or index for vertical line
+                xMax: {{buy_index}},
                 borderColor: 'rgba(255, 99, 132, 0.75)',
                 borderWidth: 2,
                 label: {
-                  content: 'Event A',
+                  content: 'Missed Buy',
                   enabled: true,
                   position: 'top'
                 }
