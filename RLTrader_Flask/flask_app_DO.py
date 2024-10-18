@@ -17,7 +17,7 @@ def index():
         # conn = sql.connect("/root/RLTrader/RLTrader.db")
         folder_name = datetime.datetime.now().strftime("%Y-%m-%d")
         df = pd.read_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv")
-        values = [[float(df.iloc[i]["Resulting Cash"]), datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H:%M")] if float(df.iloc[i]["Resulting Held"]) == 0 else [None, datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H:%M")] for i in range(len(df))]
+        values = [[float(df.iloc[i]["Resulting Cash"]), float(datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H%M"))] if float(df.iloc[i]["Resulting Held"]) == 0 else [None, datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H:%M")] for i in range(len(df))]
         # values = [[c[0] * c[2] + c[1], datetime.datetime.fromtimestamp(c[3]).day] for i, c in enumerate(conn.execute("SELECT close, cash, held, timestamp FROM trades").fetchall())]
 
         return render_template("index.html", name=session['name'], data=[v[0] for v in values], labels=[v[1] for v in values])
