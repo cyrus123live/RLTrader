@@ -18,7 +18,7 @@ CASH_DIVISOR = 100
 CASH_SUBTRACTOR = 91000 # Try to work with just 1000
 STARTING_CASH = 92000 - CASH_SUBTRACTOR
 EXAMPLE_CLOSE = 580
-MODEL_NAME = "models/PPO_109"
+MODEL_NAME = "PPO_109"
 
 
 load_dotenv()
@@ -111,19 +111,19 @@ def buy(qty, price):
 
 def add_to_minutely_csv(folder_name, dict):
     df = pd.DataFrame(dict)
-    df.to_csv(f"/root/RLTrader/{folder_name}/minutely.csv", mode="a", index=False, header=False)
+    df.to_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv", mode="a", index=False, header=False)
 
 def add_to_daily_csv(dict):
     df = pd.DataFrame(dict)
-    df.to_csv(f"/root/RLTrader/daily.csv", mode="a", index=False, header=False)
+    df.to_csv(f"/root/RLTrader/csv/daily.csv", mode="a", index=False, header=False)
 
 
 def main():
 
-    folder_name = datetime.datetime.now().strftime("Y-%m-%d_%H-%M")
+    folder_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
 
     # conn = sql.connect("/root/RLTrader/RLTrader.db")
-    os.makedirs(f"/root/RLTrader/{folder_name}", exist_ok=True)
+    os.makedirs(f"/root/RLTrader/csv/{folder_name}", exist_ok=True)
     trades = pd.DataFrame()
     # conn.execute("DROP TABLE trades")
     # conn.execute('''
@@ -138,7 +138,7 @@ def main():
     # )
 
     # Parameters
-    model = A2C.load("/root/RLTrader/" + MODEL_NAME)
+    model = A2C.load("/root/RLTrader/models/" + MODEL_NAME)
     k = STARTING_CASH / EXAMPLE_CLOSE
     held = get_position_quantity()
     cash = get_cash() - CASH_SUBTRACTOR
@@ -222,9 +222,6 @@ def main():
                 # Update database
                 cash = get_cash() - CASH_SUBTRACTOR
                 held = get_position_quantity()
-
-                value = get_position_value()
-                print(f"New value of stock portfolio: {value}")
 
                 # conn.execute('''
                 #     INSERT INTO trades (timestamp, close, cash, action, held) VALUES (?, ?, ?, ?, ?) ''', (
