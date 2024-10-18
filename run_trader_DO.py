@@ -29,7 +29,7 @@ def get_cash():
     headers = {"accept": "application/json", "APCA-API-KEY-ID": api_key, "APCA-API-SECRET-KEY": api_secret_key}
     response = requests.get("https://paper-api.alpaca.markets/v2/account", headers=headers)
 
-    return round(float(response.json()["cash"]), 2)
+    return round(float(response.json()["cash"]) - CASH_SUBTRACTOR, 2)
 
 def get_position():
     headers = {"accept": "application/json", "APCA-API-KEY-ID": api_key, "APCA-API-SECRET-KEY": api_secret_key}
@@ -99,7 +99,7 @@ def main():
     model = A2C.load("/root/RLTrader/models/" + MODEL_NAME)
     k = STARTING_CASH / EXAMPLE_CLOSE
     held = get_position_quantity()
-    cash = get_cash() - CASH_SUBTRACTOR
+    cash = get_cash()
     start_time = datetime.datetime.now()
 
     missed_trades = 0
@@ -182,7 +182,7 @@ def main():
                 time.sleep(5)
 
                 # Update csv
-                cash = get_cash() - CASH_SUBTRACTOR
+                cash = get_cash()
                 held = get_position_quantity()
 
                 add_to_minutely_csv(folder_name, [{
