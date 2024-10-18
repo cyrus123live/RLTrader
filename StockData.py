@@ -116,13 +116,14 @@ def process_data(data):
         processed_data[f'{feature}_Normalized'] = (processed_data[feature] - rolling_mean) / rolling_std
 
         # Min-Max Scaling to range -1 to 1 using rolling window # Models 24 and up use this
-        rolling_min = processed_data[f'{feature}_Normalized'].rolling(window=20).min()
-        rolling_max = processed_data[f'{feature}_Normalized'].rolling(window=20).max()
-        processed_data[f'{feature}_Scaled'] = -1 + 2 * (processed_data[f'{feature}_Normalized'] - rolling_min) / (rolling_max - rolling_min)
+        # rolling_min = processed_data[f'{feature}_Normalized'].rolling(window=20).min()
+        # rolling_max = processed_data[f'{feature}_Normalized'].rolling(window=20).max()
+        # processed_data[f'{feature}_Scaled'] = -1 + 2 * (processed_data[f'{feature}_Normalized'] - rolling_min) / (rolling_max - rolling_min)
 
     processed_data.dropna(inplace=True)
 
-    return processed_data.between_time('07:00', '16:00')
+    # return processed_data.between_time('07:00', '16:00')
+    return processed_data
 
 
 def process_data_old(data):

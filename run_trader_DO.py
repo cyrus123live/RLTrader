@@ -1,4 +1,4 @@
-from stable_baselines3 import PPO
+from stable_baselines3 import A2C
 from TradingEnv import TradingEnv
 import StockData
 import numpy as np
@@ -11,11 +11,12 @@ import os
 import sqlite3 as sql
 from dotenv import load_dotenv
 from pathlib import Path
+import pytz
 
 CASH_DIVISOR = 100
 STARTING_CASH = 100000 / CASH_DIVISOR
 EXAMPLE_CLOSE = 580
-MODEL_NAME = "models/trading_model_24"
+MODEL_NAME = "models/A2C_54"
 
 
 load_dotenv()
@@ -98,8 +99,8 @@ def end_trading_day(cash, held, starting_cash, starting_held, total_trades, miss
         data["Close"].iloc[-1],
         held,
         starting_held,
-        cash,
-        starting_cash,
+        cash * CASH_DIVISOR,
+        starting_cash  * CASH_DIVISOR,
         total_trades,
         missed_trades
     ))
@@ -122,10 +123,11 @@ def main():
     )
 
     # Parameters
-    model = PPO.load("/root/RLTrader/" + MODEL_NAME)
+    model = A2C.load("/root/RLTrader/" + MODEL_NAME)
     k = STARTING_CASH / EXAMPLE_CLOSE
     held = get_position_quantity()
     cash = get_cash()  / CASH_DIVISOR
+    start_time = datetime.datetime.now()
 
     missed_trades = 0
     total_trades = 0
@@ -146,15 +148,15 @@ def main():
                 print("It is the weekend, ending trader session.")
                 quit()
 
-            # Too late
-            if current_time.hour > 20 or (current_time.hour == 20 and current_time.minute >= 1):
+            # Too late (next day UTC = 8pm New York)
+            if current_time.day != start_time.day:
                 print("Trading day over, ending trader session.")
-                end_trading_day(cash, held, starting_cash, starting_held, total_trades, missed_trades) # TODO: make sure this works
+                end_trading_day(cash, held, starting_cash, starting_held, total_trades, missed_trades) 
                 print("Trading day ended successfully.")
                 quit()
 
-            # Too early
-            if current_time.hour < 11:
+            # Too early (8am UTC = 4 am New York)
+            if current_time.hour < 8:
                 continue
 
             # every 1st second of each minute
@@ -166,6 +168,7 @@ def main():
                     continue
 
                 if data.shape[0] == 0:
+                    print("No data...", e)
                     continue
 
                 obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
@@ -175,17 +178,19 @@ def main():
                 if action < 0 and held > 0:
                     total_trades += 1
                     print(sell_all(round(data['Close'].iloc[-1], 2)), "\n\n")
-                    print(f"{current_time.strftime('%Y-%m-%d %H-%M')} Executed sell at price {round(data['Close'].iloc[-1], 2)}")
+                    print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executed sell at price {round(data['Close'].iloc[-1], 2)}")
                 elif action > 0 and cash > 10:
                     total_trades += 1
                     print(buy_all(round(data['Close'].iloc[-1], 2), cash), "\n\n")
-                    print(f"{current_time.strftime('%Y-%m-%d %H-%M')} Executed buy all at price {round(data['Close'].iloc[-1], 2)}")
+                    print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executed buy all at price {round(data['Close'].iloc[-1], 2)}")
                 else:
-                    print(f"{current_time.strftime('%Y-%m-%d %H-%M')} Holding at price {round(data['Close'].iloc[-1], 2)}")
+                    print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Holding at price {round(data['Close'].iloc[-1], 2)}")
 
-                time.sleep(25)
-                if len(cancel_all()) > 0: # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
-                    missed_trades += 1 # Not yet sure if this will work 
+                time.sleep(30)
+                cancel_output = cancel_all()
+                if len(cancel_output) > 0: # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
+                    missed_trades += 1 
+                    print("Missed Trades, output:", cancel_output)
                 time.sleep(5)
 
                 # Update database
@@ -204,7 +209,7 @@ def main():
                     held
                 ))
                 conn.commit()
-                print(f"Cash: {cash}, Held: {held}\n")
+                print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash}, Held: {held}\n")
 
         except Exception as e:
             print("Failure in loop:", e)
