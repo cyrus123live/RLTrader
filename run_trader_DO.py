@@ -81,12 +81,20 @@ def buy(qty, price):
     return make_order(qty, "buy", price)
 
 def add_to_minutely_csv(folder_name, dict):
+    file_name = f"/root/RLTrader/csv/{folder_name}/minutely.csv"
     df = pd.DataFrame(dict)
-    df.to_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv", mode="a", index=False)
+    if not os.path.isfile(file_name):
+        df.to_csv(file_name, mode="a", index=False)
+    else:
+        df.to_csv(file_name, mode="a", index=False, header=False)
 
 def add_to_daily_csv(dict):
+    file_name = f"/root/RLTrader/csv/daily.csv"
     df = pd.DataFrame(dict)
-    df.to_csv(f"/root/RLTrader/csv/daily.csv", mode="a", index=False)
+    if not os.path.isfile(file_name):
+        df.to_csv(file_name, mode="a", index=False)
+    else:
+        df.to_csv(file_name, mode="a", index=False, header=False)
 
 
 def main():
