@@ -16,7 +16,7 @@ import pytz
 CASH_DIVISOR = 100
 STARTING_CASH = 100000 / CASH_DIVISOR
 EXAMPLE_CLOSE = 580
-MODEL_NAME = "models/A2C_54"
+MODEL_NAME = "models/PPO_109"
 
 
 load_dotenv()
