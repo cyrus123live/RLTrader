@@ -161,15 +161,15 @@ def main():
 
                 if action < 0 and held > 0:
                     total_trades += 1
-                    print("--------------- Executing Sell Order ------------")
-                    print(sell_all(round(data['Close'].iloc[-1], 2)), "\n\n")
-                    print("-------------------------------------------------")
+                    print("--------------- Executing Sell Order ------------\n")
+                    print(sell_all(round(data['Close'].iloc[-1], 2)))
+                    print("\n-------------------------------------------------\n")
                     print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executed sell at price {round(data['Close'].iloc[-1], 2)}")
                 elif action > 0 and cash > 10:
                     total_trades += 1
-                    print("--------------- Executing Buy Order -------------")
-                    print(buy_all(round(data['Close'].iloc[-1], 2), cash), "\n\n")
-                    print("-------------------------------------------------")
+                    print("--------------- Executing Buy Order -------------\n")
+                    print(buy_all(round(data['Close'].iloc[-1], 2), cash))
+                    print("\n-------------------------------------------------\n")
                     print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executed buy all ({cash / round(data['Close'].iloc[-1], 2)}) at price {round(data['Close'].iloc[-1], 2)}, with cash: {cash}")
                 else:
                     print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Holding at price {round(data['Close'].iloc[-1], 2)}")
