@@ -21,7 +21,6 @@
 
 <script>
     const ctx = document.getElementById('myChart');
-    Chart.register(ChartAnnotation.Annotation);
     new Chart(ctx, {
       type: 'line',
       data: {
@@ -47,8 +46,9 @@
         plugins: {
           annotation: {
             annotations: {
+              {% with counter=1 %}
               {%for buy_index in missed_buys%}
-                '{{buy_index}}': {
+                line{{counter}}: {
                   type: 'line',
                   xMin: {{buy_index}},  // Example date or index for vertical line
                   xMax: {{buy_index}},
@@ -60,9 +60,10 @@
                     position: 'top'
                   }
                 },
+                {%counter|add:"1"%}
                 {%endfor%}
                 {%for sell_index in missed_sells%}
-                '{{sell_index}}': {
+                line{{counter}}: {
                     type: 'line',
                     xMin: {{sell_index}},  // Example date or index for vertical line
                     xMax: {{sell_index}},
@@ -74,7 +75,9 @@
                       position: 'top'
                     }
                   },
+                  {%counter|add:"1"%}
                 {%endfor%}
+                {%endwith%}
             }
           }
         }
