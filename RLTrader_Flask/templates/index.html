@@ -44,37 +44,36 @@
       options: {
         plugins: {
           annotation: {
-            {%for buy_index in missed_buys%}
-            annotations: {
-              line1: {
-                type: 'line',
-                xMin: {{buy_index}},  // Example date or index for vertical line
-                xMax: {{buy_index}},
-                borderColor: 'rgba(255, 99, 132, 0.75)',
-                borderWidth: 2,
-                label: {
-                  content: 'Missed Buy',
-                  enabled: true,
-                  position: 'top'
-                }
-              },
-              {%endfor%}
-              {%for sell_index in missed_sells%}
-              annotations: {
+            annotations: {[
+              {%for buy_index in missed_buys%}
                 line1: {
                   type: 'line',
-                  xMin: {{sell_index}},  // Example date or index for vertical line
-                  xMax: {{sell_index}},
+                  xMin: {{buy_index}},  // Example date or index for vertical line
+                  xMax: {{buy_index}},
                   borderColor: 'rgba(255, 99, 132, 0.75)',
                   borderWidth: 2,
                   label: {
-                    content: 'Missed Sell',
+                    content: 'Missed Buy',
                     enabled: true,
                     position: 'top'
                   }
                 },
-              {%endfor%}
-            }
+                {%endfor%}
+                {%for sell_index in missed_sells%}
+                  line1: {
+                    type: 'line',
+                    xMin: {{sell_index}},  // Example date or index for vertical line
+                    xMax: {{sell_index}},
+                    borderColor: 'rgba(255, 99, 132, 0.75)',
+                    borderWidth: 2,
+                    label: {
+                      content: 'Missed Sell',
+                      enabled: true,
+                      position: 'top'
+                    }
+                  },
+                {%endfor%}
+            ]}
           }
         }
       }
