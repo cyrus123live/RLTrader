@@ -80,35 +80,6 @@ def buy_all(price, cash):
 def buy(qty, price):
     return make_order(qty, "buy", price)
 
-# def end_trading_day(cash, held, starting_cash, starting_held, total_trades, missed_trades, data = StockData.get_current_data()):
-    # conn = sql.connect("/root/RLTrader/RLTrader.db")
-    # conn.execute('''
-    #     CREATE TABLE IF NOT EXISTS days (
-    #         id INTEGER PRIMARY KEY AUTOINCREMENT,
-    #         timestamp REAL,
-    #         open REAL,
-    #         close REAL,
-    #         ending_held REAL,
-    #         starting_held REAL,
-    #         ending_cash REAL,
-    #         starting_cash REAL,
-    #         total_trades REAL,
-    #         missed_trades REAL
-    #     )'''
-    # )
-    # conn.execute("INSERT INTO days (timestamp, open, close, ending_held, starting_held, ending_cash, starting_cash, total_trades, missed_trades) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (
-    #     datetime.datetime.now().timestamp(),
-    #     data["Close"].iloc[0],
-    #     data["Close"].iloc[-1],
-    #     held,
-    #     starting_held,
-    #     cash,
-    #     starting_cash,
-    #     total_trades,
-    #     missed_trades
-    # ))
-    # conn.commit()
-
 def add_to_minutely_csv(folder_name, dict):
     df = pd.DataFrame(dict)
     df.to_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv", mode="a", index=False, header=False)
@@ -122,20 +93,7 @@ def main():
 
     folder_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
 
-    # conn = sql.connect("/root/RLTrader/RLTrader.db")
     os.makedirs(f"/root/RLTrader/csv/{folder_name}", exist_ok=True)
-    trades = pd.DataFrame()
-    # conn.execute("DROP TABLE trades")
-    # conn.execute('''
-    #     CREATE TABLE IF NOT EXISTS trades (
-    #         id INTEGER PRIMARY KEY AUTOINCREMENT,
-    #         timestamp REAL,
-    #         close REAL,
-    #         cash REAL,
-    #         action REAL,
-    #         held REAL
-    #     )'''
-    # )
 
     # Parameters
     model = A2C.load("/root/RLTrader/models/" + MODEL_NAME)
@@ -203,11 +161,15 @@ def main():
 
                 if action < 0 and held > 0:
                     total_trades += 1
+                    print("--------------- Executing Sell Order ------------")
                     print(sell_all(round(data['Close'].iloc[-1], 2)), "\n\n")
+                    print("-------------------------------------------------")
                     print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executed sell at price {round(data['Close'].iloc[-1], 2)}")
                 elif action > 0 and cash > 10:
                     total_trades += 1
+                    print("--------------- Executing Buy Order -------------")
                     print(buy_all(round(data['Close'].iloc[-1], 2), cash), "\n\n")
+                    print("-------------------------------------------------")
                     print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executed buy all ({cash / round(data['Close'].iloc[-1], 2)}) at price {round(data['Close'].iloc[-1], 2)}, with cash: {cash}")
                 else:
                     print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Holding at price {round(data['Close'].iloc[-1], 2)}")
@@ -219,19 +181,10 @@ def main():
                     print("Missed Trades, output:", cancel_output)
                 time.sleep(5)
 
-                # Update database
+                # Update csv
                 cash = get_cash() - CASH_SUBTRACTOR
                 held = get_position_quantity()
 
-                # conn.execute('''
-                #     INSERT INTO trades (timestamp, close, cash, action, held) VALUES (?, ?, ?, ?, ?) ''', (
-                #     datetime.datetime.now().timestamp(), # datetime.datetime.fromtimestamp() to reverse
-                #     data.iloc[-1]["Close"], 
-                #     cash, 
-                #     float(action), 
-                #     held
-                # ))
-                # conn.commit()
                 add_to_minutely_csv(folder_name, [{
                     "Time": datetime.datetime.now().timestamp(), 
                     "Close": data.iloc[-1]["Close"], 
