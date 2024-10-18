@@ -41,29 +41,6 @@
           tension: 0.1,
           spanGaps: true
         }]
-      },
-      options: {
-        plugins: {
-          annotation: {
-            annotations: {
-              {%for buy_index in missed_buys%}
-                line{{forloop.counter}}: {
-                  type: 'line',
-                  xMin: {{buy_index}},  // Example date or index for vertical line
-                  xMax: {{buy_index}},
-                  borderColor: 'rgba(255, 99, 132, 0.75)',
-                  borderWidth: 2,
-                  label: {
-                    content: 'Missed Buy',
-                    enabled: true,
-                    position: 'top'
-                  }
-                },
-                {%endfor%}
-                
-            }
-          }
-        }
       }
     });
 </script>
