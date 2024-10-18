@@ -224,7 +224,7 @@ def get_day(year, month, day):
 def get_current_data():
 
     prices = yf.Ticker("SPY").history(period='max', interval='1m', prepost=True)
-    print("Current Candle: ", prices.iloc[-1])
+    print("Current Candle: ", prices.iloc[-2].tolist())
     prices["close"] = prices["Close"]
     prices["low"] = prices["Low"]
     prices["high"] = prices["High"]
