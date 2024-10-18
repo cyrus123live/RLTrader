@@ -40,8 +40,31 @@
           tension: 0.1,
           spanGaps: true
         }]
+      },
+      options: {
+        plugins: {
+          annotation: {
+            {{for buy_index in buy_indexes}}
+            annotations: {
+              line1: {
+                type: 'line',
+                xMin: '2024-01-15',  // Example date or index for vertical line
+                xMax: '2024-01-15',
+                borderColor: 'rgba(255, 99, 132, 0.75)',
+                borderWidth: 2,
+                label: {
+                  content: 'Event A',
+                  enabled: true,
+                  position: 'top'
+                }
+              },
+              {{endfor}}
+            }
+          }
+        }
       }
     });
+</script>
   </script>
 
 {%- endif -%}

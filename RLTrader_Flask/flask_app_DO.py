@@ -19,6 +19,7 @@ def index():
         df = pd.read_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv")
         values = [[float((df.iloc[i]["Close"] * df.iloc[i]["Resulting Held"] + df.iloc[i]["Resulting Cash"]) / (df.iloc[0]["Close"] * df.iloc[0]["Resulting Held"] + df.iloc[0]["Resulting Cash"])), float(datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H%M"))] for i in range(len(df))]
         closes = [[float((df.iloc[i]["Close"]) / (df.iloc[0]["Close"])), float(datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H%M"))] for i in range(len(df))]
+        buy_indexes = [[float(datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H%M"))] for i in range(len(df[df["Action"] > 0]))]
         # values = [[c[0] * c[2] + c[1], datetime.datetime.fromtimestamp(c[3]).day] for i, c in enumerate(conn.execute("SELECT close, cash, held, timestamp FROM trades").fetchall())]
 
         return render_template("index.html", name=session['name'], data=[v[0] for v in values], closes=[v[0] for v in closes], labels=[v[1] for v in values])

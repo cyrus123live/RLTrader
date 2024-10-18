@@ -167,21 +167,21 @@ def main():
                 obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
 
                 action = model.predict(obs, deterministic=True)[0][0]
+                bought = False
+                missed_buy = False
+                sold = False
+                missed_sell = False
 
                 if action < 0 and held > 0:
                     total_trades += 1
+                    sold = True
                     print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executing sell at price {round(data['Close'].iloc[-1], 2)}")
-                    # print("\n--------------- Executing Sell Order ------------\n")
-                    # print(sell_all(round(data['Close'].iloc[-1], 2)))
                     sell_all(round(data['Close'].iloc[-1], 2))
-                    # print("\n-------------------------------------------------\n")
                 elif action > 0 and cash > 10:
                     total_trades += 1
+                    bought = True
                     print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executing buy all ({cash / round(data['Close'].iloc[-1], 2):0.2f}) at price {round(data['Close'].iloc[-1], 2)}, with cash: {cash}")
-                    # print("\n--------------- Executing Buy Order -------------\n")
-                    # print(buy_all(round(data['Close'].iloc[-1], 2), cash))
                     buy_all(round(data['Close'].iloc[-1], 2), cash)
-                    # print("\n-------------------------------------------------\n")
                 else:
                     print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Holding at price {round(data['Close'].iloc[-1], 2)}")
 
@@ -189,6 +189,8 @@ def main():
                 cancel_output = cancel_all()
                 if len(cancel_output) > 0: # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
                     missed_trades += 1 
+                    if bought: missed_buy = True
+                    if sold: missed_sell = True
                     print("** Missed Trade **")
                 time.sleep(5)
 
@@ -201,7 +203,11 @@ def main():
                     "Close": data.iloc[-1]["Close"], 
                     "Action": float(action), 
                     "Resulting Cash": cash, 
-                    "Resulting Held": held
+                    "Resulting Held": held,
+                    "Bought": bought,
+                    "Sold": sold,
+                    "Missed Buy": missed_buy,
+                    "Missed Sell": missed_sell
                 }])
                 print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash}, Held: {held}\n\n")
 
