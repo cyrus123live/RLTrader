@@ -101,8 +101,8 @@ def end_trading_day(cash, held, starting_cash, starting_held, total_trades, miss
         data["Close"].iloc[-1],
         held,
         starting_held,
-        cash + CASH_SUBTRACTOR,
-        starting_cash  + CASH_SUBTRACTOR,
+        cash,
+        starting_cash,
         total_trades,
         missed_trades
     ))
@@ -184,7 +184,7 @@ def main():
                 elif action > 0 and cash > 10:
                     total_trades += 1
                     print(buy_all(round(data['Close'].iloc[-1], 2), cash), "\n\n")
-                    print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executed buy all at price {round(data['Close'].iloc[-1], 2)}")
+                    print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executed buy all ({cash / round(data['Close'].iloc[-1], 2)}) at price {round(data['Close'].iloc[-1], 2)}, with cash: {cash}")
                 else:
                     print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Holding at price {round(data['Close'].iloc[-1], 2)}")
 
@@ -206,7 +206,7 @@ def main():
                     INSERT INTO trades (timestamp, close, cash, action, held) VALUES (?, ?, ?, ?, ?) ''', (
                     datetime.datetime.now().timestamp(), # datetime.datetime.fromtimestamp() to reverse
                     data.iloc[-1]["Close"], 
-                    cash + CASH_SUBTRACTOR, 
+                    cash, 
                     float(action), 
                     held
                 ))
