@@ -163,23 +163,25 @@ def main():
                 if action < 0 and held > 0:
                     total_trades += 1
                     print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executing sell at price {round(data['Close'].iloc[-1], 2)}")
-                    print("\n--------------- Executing Sell Order ------------\n")
-                    print(sell_all(round(data['Close'].iloc[-1], 2)))
-                    print("\n-------------------------------------------------\n")
+                    # print("\n--------------- Executing Sell Order ------------\n")
+                    # print(sell_all(round(data['Close'].iloc[-1], 2)))
+                    sell_all(round(data['Close'].iloc[-1], 2))
+                    # print("\n-------------------------------------------------\n")
                 elif action > 0 and cash > 10:
                     total_trades += 1
                     print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executing buy all ({cash / round(data['Close'].iloc[-1], 2):0.2f}) at price {round(data['Close'].iloc[-1], 2)}, with cash: {cash}")
-                    print("\n--------------- Executing Buy Order -------------\n")
-                    print(buy_all(round(data['Close'].iloc[-1], 2), cash))
-                    print("\n-------------------------------------------------\n")
+                    # print("\n--------------- Executing Buy Order -------------\n")
+                    # print(buy_all(round(data['Close'].iloc[-1], 2), cash))
+                    buy_all(round(data['Close'].iloc[-1], 2), cash)
+                    # print("\n-------------------------------------------------\n")
                 else:
                     print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Holding at price {round(data['Close'].iloc[-1], 2)}")
 
-                time.sleep(30)
+                time.sleep(40)
                 cancel_output = cancel_all()
                 if len(cancel_output) > 0: # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
                     missed_trades += 1 
-                    print("Missed Trades, output:", cancel_output)
+                    print("** Missed Trade **\n")
                 time.sleep(5)
 
                 # Update csv
