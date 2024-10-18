@@ -12,6 +12,7 @@ import sqlite3 as sql
 from dotenv import load_dotenv
 from pathlib import Path
 import pytz
+import pandas as pd
 
 CASH_DIVISOR = 100
 CASH_SUBTRACTOR = 91000 # Try to work with just 1000
@@ -79,50 +80,62 @@ def buy_all(price, cash):
 def buy(qty, price):
     return make_order(qty, "buy", price)
 
-def end_trading_day(cash, held, starting_cash, starting_held, total_trades, missed_trades, data = StockData.get_current_data()):
-    conn = sql.connect("/root/RLTrader/RLTrader.db")
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS days (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp REAL,
-            open REAL,
-            close REAL,
-            ending_held REAL,
-            starting_held REAL,
-            ending_cash REAL,
-            starting_cash REAL,
-            total_trades REAL,
-            missed_trades REAL
-        )'''
-    )
-    conn.execute("INSERT INTO days (timestamp, open, close, ending_held, starting_held, ending_cash, starting_cash, total_trades, missed_trades) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (
-        datetime.datetime.now().timestamp(),
-        data["Close"].iloc[0],
-        data["Close"].iloc[-1],
-        held,
-        starting_held,
-        cash,
-        starting_cash,
-        total_trades,
-        missed_trades
-    ))
-    conn.commit()
+# def end_trading_day(cash, held, starting_cash, starting_held, total_trades, missed_trades, data = StockData.get_current_data()):
+    # conn = sql.connect("/root/RLTrader/RLTrader.db")
+    # conn.execute('''
+    #     CREATE TABLE IF NOT EXISTS days (
+    #         id INTEGER PRIMARY KEY AUTOINCREMENT,
+    #         timestamp REAL,
+    #         open REAL,
+    #         close REAL,
+    #         ending_held REAL,
+    #         starting_held REAL,
+    #         ending_cash REAL,
+    #         starting_cash REAL,
+    #         total_trades REAL,
+    #         missed_trades REAL
+    #     )'''
+    # )
+    # conn.execute("INSERT INTO days (timestamp, open, close, ending_held, starting_held, ending_cash, starting_cash, total_trades, missed_trades) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (
+    #     datetime.datetime.now().timestamp(),
+    #     data["Close"].iloc[0],
+    #     data["Close"].iloc[-1],
+    #     held,
+    #     starting_held,
+    #     cash,
+    #     starting_cash,
+    #     total_trades,
+    #     missed_trades
+    # ))
+    # conn.commit()
+
+def add_to_minutely_csv(folder_name, dict):
+    df = pd.DataFrame(dict)
+    df.to_csv(f"/root/RLTrader/{folder_name}/minutely.csv", mode="a", index=False, header=False)
+
+def add_to_daily_csv(dict):
+    df = pd.DataFrame(dict)
+    df.to_csv(f"/root/RLTrader/daily.csv", mode="a", index=False, header=False)
 
 
 def main():
 
-    conn = sql.connect("/root/RLTrader/RLTrader.db")
+    folder_name = datetime.datetime.now().strftime("Y-%m-%d_%H-%M")
+
+    # conn = sql.connect("/root/RLTrader/RLTrader.db")
+    os.makedirs(f"/root/RLTrader/{folder_name}", exist_ok=True)
+    trades = pd.DataFrame()
     # conn.execute("DROP TABLE trades")
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS trades (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp REAL,
-            close REAL,
-            cash REAL,
-            action REAL,
-            held REAL
-        )'''
-    )
+    # conn.execute('''
+    #     CREATE TABLE IF NOT EXISTS trades (
+    #         id INTEGER PRIMARY KEY AUTOINCREMENT,
+    #         timestamp REAL,
+    #         close REAL,
+    #         cash REAL,
+    #         action REAL,
+    #         held REAL
+    #     )'''
+    # )
 
     # Parameters
     model = A2C.load("/root/RLTrader/" + MODEL_NAME)
@@ -153,7 +166,18 @@ def main():
             # Too late (next day UTC = 8pm New York)
             if current_time.day != start_time.day:
                 print("Trading day over, ending trader session.")
-                end_trading_day(cash, held, starting_cash, starting_held, total_trades, missed_trades) 
+                data = StockData.get_current_data()
+                add_to_daily_csv([{
+                    "Time": datetime.datetime.now().timestamp(),
+                    "First Close": data["Close"].iloc[0],
+                    "First Held": starting_held,
+                    "First Cash": starting_cash,
+                    "Last Close": data["Close"].iloc[-1],
+                    "Last Held": held,
+                    "Last Cash": cash,
+                    "Total Trades": total_trades,
+                    "Missed Trades": missed_trades
+                }])
                 print("Trading day ended successfully.")
                 quit()
 
@@ -202,15 +226,22 @@ def main():
                 value = get_position_value()
                 print(f"New value of stock portfolio: {value}")
 
-                conn.execute('''
-                    INSERT INTO trades (timestamp, close, cash, action, held) VALUES (?, ?, ?, ?, ?) ''', (
-                    datetime.datetime.now().timestamp(), # datetime.datetime.fromtimestamp() to reverse
-                    data.iloc[-1]["Close"], 
-                    cash, 
-                    float(action), 
-                    held
-                ))
-                conn.commit()
+                # conn.execute('''
+                #     INSERT INTO trades (timestamp, close, cash, action, held) VALUES (?, ?, ?, ?, ?) ''', (
+                #     datetime.datetime.now().timestamp(), # datetime.datetime.fromtimestamp() to reverse
+                #     data.iloc[-1]["Close"], 
+                #     cash, 
+                #     float(action), 
+                #     held
+                # ))
+                # conn.commit()
+                add_to_minutely_csv(folder_name, [{
+                    "Time": datetime.datetime.now().timestamp(), 
+                    "Close": data.iloc[-1]["Close"], 
+                    "Action": float(action), 
+                    "Resulting Cash": cash, 
+                    "Resulting Held": held
+                }])
                 print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash}, Held: {held}\n")
 
         except Exception as e:
