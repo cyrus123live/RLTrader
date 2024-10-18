@@ -60,7 +60,7 @@
                     position: 'top'
                   }
                 },
-                {%counter|add:"1"%}
+                {{counter|add:"1"}}
                 {%endfor%}
                 {%for sell_index in missed_sells%}
                 line{{counter}}: {
@@ -75,7 +75,7 @@
                       position: 'top'
                     }
                   },
-                  {%counter|add:"1"%}
+                  {{counter|add:"1"}}
                 {%endfor%}
                 {%endwith%}
             }
