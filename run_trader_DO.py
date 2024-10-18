@@ -189,7 +189,7 @@ def main():
                 cancel_output = cancel_all()
                 if len(cancel_output) > 0: # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
                     missed_trades += 1 
-                    print("** Missed Trade **\n")
+                    print("** Missed Trade **")
                 time.sleep(5)
 
                 # Update csv
