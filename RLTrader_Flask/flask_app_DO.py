@@ -20,9 +20,10 @@ def index():
         values = [[float((df.iloc[i]["Close"] * df.iloc[i]["Resulting Held"] + df.iloc[i]["Resulting Cash"]) / (df.iloc[0]["Close"] * df.iloc[0]["Resulting Held"] + df.iloc[0]["Resulting Cash"])), float(datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H%M"))] for i in range(len(df))]
         closes = [[float((df.iloc[i]["Close"]) / (df.iloc[0]["Close"])), float(datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H%M"))] for i in range(len(df))]
         missed_buys = [[float(datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H%M"))] for i in range(len(df[df["Missed Buy"] == True]))]
+        missed_sells = [[float(datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H%M"))] for i in range(len(df[df["Missed Sell"] == True]))]
         # values = [[c[0] * c[2] + c[1], datetime.datetime.fromtimestamp(c[3]).day] for i, c in enumerate(conn.execute("SELECT close, cash, held, timestamp FROM trades").fetchall())]
 
-        return render_template("index.html", name=session['name'], data=[v[0] for v in values], closes=[v[0] for v in closes], missed_buys = missed_buys, labels=[v[1] for v in values])
+        return render_template("index.html", name=session['name'], data=[v[0] for v in values], closes=[v[0] for v in closes], missed_buys = missed_buys, missed_sells = missed_sells, labels=[v[1] for v in values])
     return render_template("index.html")
 
 @app.route("/daily")
