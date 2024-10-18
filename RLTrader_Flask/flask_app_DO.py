@@ -4,17 +4,21 @@ from dotenv import load_dotenv
 import sqlite3 as sql
 # from flaskr.auth import login_required
 import datetime
+import pandas as pd
 
 app = Flask(__name__)
 load_dotenv()
 app.secret_key = os.getenv("APP_SECRET_KEY")
 
-@app.route('/')
+@app.route('/minutely')
 def index():
     if 'name' in session and session['name'] == "admin":
 
-        conn = sql.connect("/root/RLTrader/RLTrader.db")
-        values = [[c[0] * c[2] + c[1], datetime.datetime.fromtimestamp(c[3]).day] for i, c in enumerate(conn.execute("SELECT close, cash, held, timestamp FROM trades").fetchall())]
+        # conn = sql.connect("/root/RLTrader/RLTrader.db")
+        folder_name = datetime.datetime.now().strftime("%Y-%m-%d")
+        df = pd.read_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv")
+        values = [[c["Close"] * c["Held"] + c["Cash"], datetime.datetime.fromtimestamp(c[3]).day] for i, c in enumerate(df)]
+        # values = [[c[0] * c[2] + c[1], datetime.datetime.fromtimestamp(c[3]).day] for i, c in enumerate(conn.execute("SELECT close, cash, held, timestamp FROM trades").fetchall())]
 
         return render_template("index.html", name=session['name'], data=[v[0] for v in values], labels=[v[1] for v in values])
     return render_template("index.html")
