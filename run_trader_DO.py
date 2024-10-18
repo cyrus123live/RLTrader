@@ -126,10 +126,11 @@ def main():
                 print("Trading day over, ending trader session.")
                 data = StockData.get_current_data()
                 add_to_daily_csv([{
-                    "Time": datetime.datetime.now().timestamp(),
+                    "Start Time": start_time,
                     "First Close": data["Close"].iloc[0],
                     "First Held": starting_held,
                     "First Cash": starting_cash,
+                    "End Time": datetime.datetime.now().timestamp(),
                     "Last Close": data["Close"].iloc[-1],
                     "Last Held": held,
                     "Last Cash": cash,
@@ -161,16 +162,16 @@ def main():
 
                 if action < 0 and held > 0:
                     total_trades += 1
-                    print("--------------- Executing Sell Order ------------\n")
+                    print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executing sell at price {round(data['Close'].iloc[-1], 2)}")
+                    print("\n--------------- Executing Sell Order ------------\n")
                     print(sell_all(round(data['Close'].iloc[-1], 2)))
                     print("\n-------------------------------------------------\n")
-                    print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executed sell at price {round(data['Close'].iloc[-1], 2)}")
                 elif action > 0 and cash > 10:
                     total_trades += 1
-                    print("--------------- Executing Buy Order -------------\n")
+                    print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executing buy all ({cash / round(data['Close'].iloc[-1], 2):0.2f}) at price {round(data['Close'].iloc[-1], 2)}, with cash: {cash}")
+                    print("\n--------------- Executing Buy Order -------------\n")
                     print(buy_all(round(data['Close'].iloc[-1], 2), cash))
                     print("\n-------------------------------------------------\n")
-                    print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executed buy all ({cash / round(data['Close'].iloc[-1], 2)}) at price {round(data['Close'].iloc[-1], 2)}, with cash: {cash}")
                 else:
                     print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Holding at price {round(data['Close'].iloc[-1], 2)}")
 
@@ -192,7 +193,7 @@ def main():
                     "Resulting Cash": cash, 
                     "Resulting Held": held
                 }])
-                print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash}, Held: {held}\n")
+                print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash}, Held: {held}\n\n")
 
         except Exception as e:
             print("Failure in loop:", e)
