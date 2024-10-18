@@ -5,6 +5,8 @@
     <title>HTML 5 Boilerplate</title>
     <!-- <link rel="stylesheet" href="style.css"> -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.1.0"></script> <!-- Make sure this plugin is included -->
+
 </head>
 
 {% if name %}
@@ -46,7 +48,7 @@
           annotation: {
             annotations: {
               {%for buy_index in missed_buys%}
-                {{buy_index}}: {
+                '{{buy_index}}': {
                   type: 'line',
                   xMin: {{buy_index}},  // Example date or index for vertical line
                   xMax: {{buy_index}},
@@ -60,7 +62,7 @@
                 },
                 {%endfor%}
                 {%for sell_index in missed_sells%}
-                {{buy_index}}: {
+                '{{sell_index}}': {
                     type: 'line',
                     xMin: {{sell_index}},  // Example date or index for vertical line
                     xMax: {{sell_index}},
