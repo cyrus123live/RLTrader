@@ -12,7 +12,7 @@ import sqlite3 as sql
 from dotenv import load_dotenv
 from pathlib import Path
 
-CASH_DIVISOR = 1
+CASH_DIVISOR = 100
 STARTING_CASH = 100000 / CASH_DIVISOR
 EXAMPLE_CLOSE = 580
 MODEL_NAME = "models/trading_model_24"
@@ -68,6 +68,11 @@ def make_order(qty, buy_or_sell, price):
 def sell_all(price):
     return make_order(get_position_quantity(), "sell", price)
 
+def buy_all(price, cash):
+    # to_buy = cash / data.iloc[-1]["Close"]
+    to_buy = cash / price
+    return make_order(to_buy, 'buy', price)
+
 def buy(qty, price):
     return make_order(qty, "buy", price)
 
@@ -116,6 +121,7 @@ def main():
         )'''
     )
 
+    # Parameters
     model = PPO.load("/root/RLTrader/" + MODEL_NAME)
     k = STARTING_CASH / EXAMPLE_CLOSE
     held = get_position_quantity()
@@ -135,20 +141,24 @@ def main():
             time.sleep(1)
             current_time = datetime.datetime.now()
 
+            # Weekend
             if current_time.weekday() == 5 or current_time.weekday() == 6:
                 print("It is the weekend, ending trader session.")
                 quit()
 
+            # Too late
             if current_time.hour > 20 or (current_time.hour == 20 and current_time.minute >= 1):
                 print("Trading day over, ending trader session.")
                 end_trading_day(cash, held, starting_cash, starting_held, total_trades, missed_trades) # TODO: make sure this works
                 print("Trading day ended successfully.")
                 quit()
 
+            # Too early
             if current_time.hour < 11:
                 continue
 
-            if current_time.second == 1: # every 1st second of each minute
+            # every 1st second of each minute
+            if current_time.second == 1: 
                 try:
                     data = StockData.get_current_data()
                 except Exception as e:
@@ -158,10 +168,6 @@ def main():
                 if data.shape[0] == 0:
                     continue
 
-                # Obs: ["Close_Normalized", "Change_Normalized", "D_HL_Normalized", amount_held, cash_normalized]
-                #   Amount held is normalized to k, starting cash / first close price
-                #   Cash is normalized to starting cash 
-                #   Resets each month during training, each year in testing
                 obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
 
                 action = model.predict(obs, deterministic=True)[0][0]
@@ -169,17 +175,13 @@ def main():
                 if action < 0 and held > 0:
                     total_trades += 1
                     print(sell_all(round(data['Close'].iloc[-1], 2)), "\n\n")
-                    print(f"{current_time.hour}:{current_time.minute:02d} Executed sell at price {round(data['Close'].iloc[-1], 2)}")
-                elif action > 0:
+                    print(f"{current_time.strftime('%Y-%m-%d %H-%M')} Executed sell at price {round(data['Close'].iloc[-1], 2)}")
+                elif action > 0 and cash > 10:
                     total_trades += 1
-                    to_buy = min(cash / data.iloc[-1]["Close"], action * k)
-                    if to_buy > 0:
-                        print(buy(to_buy, round(data['Close'].iloc[-1], 2)), "\n\n")
-                        print(f"{current_time.hour}:{current_time.minute:02d} Executed buy {to_buy} at price {round(data['Close'].iloc[-1], 2)}")
-                    else:
-                        print("Tried to buy a negative amount")
+                    print(buy_all(round(data['Close'].iloc[-1], 2), cash), "\n\n")
+                    print(f"{current_time.strftime('%Y-%m-%d %H-%M')} Executed buy all at price {round(data['Close'].iloc[-1], 2)}")
                 else:
-                    print(f"{current_time.hour}:{current_time.minute:02d} Holding at price {round(data['Close'].iloc[-1], 2)}")
+                    print(f"{current_time.strftime('%Y-%m-%d %H-%M')} Holding at price {round(data['Close'].iloc[-1], 2)}")
 
                 time.sleep(25)
                 if len(cancel_all()) > 0: # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute

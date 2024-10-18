@@ -6,26 +6,26 @@ import math
 import StockData
 
 class TradingEnv(gym.Env):
-    metadata = {'render.modes': ['human']}
+    metadata = {'render_modes': ['human']}
 
     def __init__(self):
         super(TradingEnv, self).__init__()
 
-        self.df = StockData.get_random_month()
+        self.df = StockData.get_random_month_2020s()
         self.reward_range = (-np.inf, np.inf)
 
         self.starting_cash = 10000000
         self.k = int(self.starting_cash / self.df['Close'].iloc[0]) # Maximum amount of stocks bought or sold each minute
         
-        self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
+        self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float64)
         self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(5,), dtype=np.float32 # Model 24 and below use this
+            low=-np.inf, high=np.inf, shape=(5,), dtype=np.float64 # Model 24 and below use this
             # low=-1, high=1, shape=(self.df[self.df.filter(regex='_Scaled$').columns].shape[1] + 2,), dtype=np.float32
         ) 
         
         # Set starting point
         self.current_step = 0
-        self.max_steps = len(self.df) - 1
+        self.max_steps = len(self.df) - 2
         
         # Initialize portfolio
         self.cash = self.starting_cash
@@ -90,10 +90,8 @@ class TradingEnv(gym.Env):
             self.last_action = 0
 
     def step(self, action):
-        # Move to the next time step
-        if self.current_step >= self.df.shape[0]:
-            self.reset()
 
+        # Move to the next time step
         self._take_action(action)
         self.current_step += 1
         
@@ -135,7 +133,8 @@ class TradingEnv(gym.Env):
         self.r = 0
         self.r_bh = math.log(1-self.c_buying)
         self.last_action = 0
-        self.df = StockData.get_random_month()
+        self.df = StockData.get_random_month_2020s()
+        self.max_steps = len(self.df) - 2
         
         return self._get_obs(), {}
 
@@ -143,13 +142,3 @@ class TradingEnv(gym.Env):
         if mode == 'human':
             # print(f"Step: {self.current_step}, Total Value: {self.total_value}, Cash: {self.cash}, Stocks: {self.stock}")
             return {"Portfolio_Value": self.total_value, "Close": self.df['Close'].iloc[self.current_step]}
-
-
-myEnv_id = 'agile_environment_space/TradingEnv' # It is best practice to have a space name and version number.
-
-gym.envs.registration.register(
-    id=myEnv_id,
-    entry_point=TradingEnv,
-    max_episode_steps=200000, # Customize to your needs.
-    reward_threshold=500 # Customize to your needs.
-)

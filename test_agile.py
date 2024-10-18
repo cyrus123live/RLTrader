@@ -1,4 +1,5 @@
-from stable_baselines3 import PPO
+# from stable_baselines3 import PPO
+from agilerl.algorithms.ppo import PPO
 from TradingEnv import TradingEnv
 import StockData
 import numpy as np
@@ -20,8 +21,8 @@ MINIMUM_FEE = 0
 
 STARTING_CASH = 1000000
 MODEL_NAME = f"models/trading_model_{counter}"
-MODEL_NAME = f"models/trading_model_24"
-test_data = StockData.get_current_data()
+MODEL_NAME = f"models/agile/PPO_trained_agent 2.pt"
+test_data = StockData.get_test_data()
 # test_data = StockData.get_year(8)
 
 model = PPO.load(MODEL_NAME)
@@ -41,7 +42,8 @@ for i in range(test_data.shape[0]):
     obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].tolist() + [held / k, cash / STARTING_CASH]) # 24 and below use this
     # obs = np.array(test_data[test_data.filter(regex='_Scaled$').columns].iloc[i].tolist() + [np.clip(2 * held / k - 1, -1, 1), np.clip(2 * cash / STARTING_CASH - 1, -1, 1)])
 
-    action = model.predict(obs, deterministic=True)[0][0]
+    action, *_ = model.get_action(obs)
+    action = action.squeeze()
 
     if action < 0 and cash + held * data["Close"] >= max(MINIMUM_FEE, FEES_PER_SHARE * held):
         cash += held * data["Close"] - max(MINIMUM_FEE, FEES_PER_SHARE * held)

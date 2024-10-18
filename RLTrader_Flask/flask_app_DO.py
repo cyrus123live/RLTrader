@@ -19,6 +19,16 @@ def index():
         return render_template("index.html", name=session['name'], data=[v[0] for v in values], labels=[v[1] for v in values])
     return render_template("index.html")
 
+@app.route("/daily")
+def daily_graph():
+    if 'name' in session and session['name'] == "admin":
+
+        conn = sql.connect("/root/RLTrader/RLTrader.db")
+        values = [[(c[0] - c[1]) / c[0], datetime.datetime.fromtimestamp(c[2]).day] for i, c in enumerate(conn.execute("SELECT total_trades, missed_trades, timestamp FROM days").fetchall())]
+
+        return render_template("index.html", name=session['name'], data=[v[0] for v in values], labels=[v[1] for v in values])
+    return render_template("index.html")
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
