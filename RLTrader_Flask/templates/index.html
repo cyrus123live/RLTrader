@@ -21,7 +21,7 @@
 
 <script>
     const ctx = document.getElementById('myChart');
-  
+    Chart.register(Chart.Annotation);
     new Chart(ctx, {
       type: 'line',
       data: {
