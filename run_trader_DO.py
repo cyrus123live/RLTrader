@@ -60,6 +60,7 @@ def make_order(qty, buy_or_sell, price):
         'side': buy_or_sell, # "buy" or "sell"
         'type': 'limit',
         'limit_price': str(price),
+        'extended_hours': True,
         'time_in_force': 'day' # Note: experiment with this
     }
 
