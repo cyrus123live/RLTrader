@@ -14,7 +14,8 @@ from pathlib import Path
 import pytz
 
 CASH_DIVISOR = 100
-STARTING_CASH = 100000 / CASH_DIVISOR
+CASH_SUBTRACTOR = 91000 # Try to work with just 1000
+STARTING_CASH = 92000 - CASH_SUBTRACTOR
 EXAMPLE_CLOSE = 580
 MODEL_NAME = "models/PPO_109"
 
@@ -100,8 +101,8 @@ def end_trading_day(cash, held, starting_cash, starting_held, total_trades, miss
         data["Close"].iloc[-1],
         held,
         starting_held,
-        cash * CASH_DIVISOR,
-        starting_cash  * CASH_DIVISOR,
+        cash + CASH_SUBTRACTOR,
+        starting_cash  + CASH_SUBTRACTOR,
         total_trades,
         missed_trades
     ))
@@ -127,7 +128,7 @@ def main():
     model = A2C.load("/root/RLTrader/" + MODEL_NAME)
     k = STARTING_CASH / EXAMPLE_CLOSE
     held = get_position_quantity()
-    cash = get_cash()  / CASH_DIVISOR
+    cash = get_cash() - CASH_SUBTRACTOR
     start_time = datetime.datetime.now()
 
     missed_trades = 0
@@ -195,7 +196,7 @@ def main():
                 time.sleep(5)
 
                 # Update database
-                cash = get_cash()  / CASH_DIVISOR
+                cash = get_cash() - CASH_SUBTRACTOR
                 held = get_position_quantity()
 
                 value = get_position_value()
@@ -205,7 +206,7 @@ def main():
                     INSERT INTO trades (timestamp, close, cash, action, held) VALUES (?, ?, ?, ?, ?) ''', (
                     datetime.datetime.now().timestamp(), # datetime.datetime.fromtimestamp() to reverse
                     data.iloc[-1]["Close"], 
-                    cash * CASH_DIVISOR, 
+                    cash + CASH_SUBTRACTOR, 
                     float(action), 
                     held
                 ))
