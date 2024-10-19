@@ -15,8 +15,13 @@ def index():
     if 'name' in session and session['name'] == "admin":
 
         # conn = sql.connect("/root/RLTrader/RLTrader.db")
-        folder_name = datetime.datetime.now().strftime("%Y-%m-%d")
-        df = pd.read_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv")
+        try:
+            folder_name = datetime.datetime.now().strftime("%Y-%m-%d")
+            df = pd.read_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv")
+        except:
+            folder_name = datetime.datetime(year = datetime.datetime.now().year, month = datetime.datetime.now().month, day = datetime.datetime.now().day - 1).strftime("%Y-%m-%d")
+            df = pd.read_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv")
+        
         values = [[float((df.iloc[i]["Close"] * df.iloc[i]["Resulting Held"] + df.iloc[i]["Resulting Cash"]) / (df.iloc[0]["Close"] * df.iloc[0]["Resulting Held"] + df.iloc[0]["Resulting Cash"])), float(datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H%M"))] for i in range(len(df))]
         closes = [[float((df.iloc[i]["Close"]) / (df.iloc[0]["Close"])), float(datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H%M"))] for i in range(len(df))]
         missed_buys = [float(datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H%M")) for i in range(len(df[df["Missed Buy"] == True]))]
