@@ -11,16 +11,10 @@ load_dotenv()
 app.secret_key = os.getenv("APP_SECRET_KEY")
 
 
-@app.route('/minutely_json')
-def minutely_jason():
+@app.route('/minutely_json/<folder_name>')
+def minutely_jason(folder_name):
 
-    try:
-        folder_name = datetime.datetime.now().strftime("%Y-%m-%d")
-        df = pd.read_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv")
-    except:
-        folder_name = datetime.datetime(year = datetime.datetime.now().year, month = datetime.datetime.now().month, day = datetime.datetime.now().day - 1).strftime("%Y-%m-%d")
-        df = pd.read_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv")
-
+    df = pd.read_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv")
     return df.to_json()
 
 @app.route('/minutely')
