@@ -17,11 +17,17 @@ def minutely_jason(folder_name):
     df = pd.read_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv")
     return df.to_json()
 
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+    
+'''
+
 @app.route('/minutely')
 def index():
     if 'name' in session and session['name'] == "admin":
 
-        # conn = sql.connect("/root/RLTrader/RLTrader.db")
         try:
             folder_name = datetime.datetime.now().strftime("%Y-%m-%d")
             df = pd.read_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv")
@@ -33,7 +39,6 @@ def index():
         closes = [[float((df.iloc[i]["Close"]) / (df.iloc[0]["Close"])), float(datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H%M"))] for i in range(len(df))]
         missed_buys = [float(datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H%M")) for i in range(len(df[df["Missed Buy"] == True]))]
         missed_sells = [float(datetime.datetime.fromtimestamp(df.iloc[i]["Time"]).strftime("%H%M")) for i in range(len(df[df["Missed Sell"] == True]))]
-        # values = [[c[0] * c[2] + c[1], datetime.datetime.fromtimestamp(c[3]).day] for i, c in enumerate(conn.execute("SELECT close, cash, held, timestamp FROM trades").fetchall())]
 
         return render_template("index.html", name=session['name'], data=[v[0] for v in values], closes=[v[0] for v in closes], missed_buys = missed_buys, missed_sells = missed_sells, labels=[v[1] for v in values])
     return render_template("index.html")
@@ -65,6 +70,4 @@ def logout():
     session.pop('name', None)
     return redirect(url_for('index'))
 
-
-if __name__ == '__main__':
-    app.run(debug=True)
+'''

@@ -80,22 +80,22 @@ def buy_all(price, cash):
 def buy(qty, price):
     return make_order(qty, "buy", price)
 
-def add_to_minutely_csv(folder_name, dict):
-    file_name = f"/root/RLTrader/csv/{folder_name}/minutely.csv"
+def write_df_to_csv(file_name, dict):
     df = pd.DataFrame(dict)
     if not os.path.isfile(file_name):
         df.to_csv(file_name, mode="a", index=False)
     else:
         df.to_csv(file_name, mode="a", index=False, header=False)
+
+def add_to_stockdata_csv(folder_name, dict):
+    write_df_to_csv(f"/root/RLTrader/csv/{folder_name}/stockdata.csv", dict)
+
+def add_to_minutely_csv(folder_name, dict):
+    write_df_to_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv", dict)
 
 def add_to_daily_csv(dict):
-    file_name = f"/root/RLTrader/csv/daily.csv"
-    df = pd.DataFrame(dict)
-    if not os.path.isfile(file_name):
-        df.to_csv(file_name, mode="a", index=False)
-    else:
-        df.to_csv(file_name, mode="a", index=False, header=False)
-
+    write_df_to_csv(f"/root/RLTrader/csv/daily.csv", dict)
+    
 
 def main():
 
@@ -209,6 +209,7 @@ def main():
                     "Missed Buy": missed_buy,
                     "Missed Sell": missed_sell
                 }])
+                add_to_stockdata_csv(folder_name, data.iloc[-1].to_dict()) # Not tested
                 print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash}, Held: {held}\n\n")
 
         except Exception as e:

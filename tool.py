@@ -7,9 +7,10 @@ from stable_baselines3 import A2C
 import TradingEnv
 from stable_baselines3.common.monitor import Monitor
 import numpy as np
+import StockData
 
 MODEL_NAME = "PPO_109"
-FOLDER_NAME = "2024-10-17"
+FOLDER_NAME = "2024-10-18"
 
 # Returns a history dataframe
 def test_model_manually(model, test_data, starting_cash = 1000000):
@@ -43,6 +44,11 @@ def test_model_manually(model, test_data, starting_cash = 1000000):
 def plot_result(result):
 
     # result.index = [dt.datetime.fromtimestamp(i) for i in result.index]
+    # model = A2C.load("/root/RLTrader/models/" + MODEL_NAME)
+
+    result.index = [dt.datetime.fromtimestamp(t) for t in result["Time"]]
+    # result["Close"] = result["Close"].shift(-1)
+    print(result)
 
     to_plot = pd.DataFrame(index=result.index)
     to_plot['close'] = result["Close"] / result.iloc[0]["Close"]
@@ -51,17 +57,20 @@ def plot_result(result):
     figure = plt.figure()
     p = figure.add_subplot()
 
-    p.plot(to_plot['close'], label="Stock Movement")
-    p.plot(to_plot['portfolio'], label="Portfolio Value")
     [p.axvline(x = i, color = '#33ff33') for i in result[(result['Bought'] == True) & (result["Missed Buy"] == False)].index]
     [p.axvline(x = i, color = '#ff0000') for i in result[(result['Sold'] == True) & (result["Missed Sell"] == False)].index]
     [p.axvline(x = i, color = '#ddffdd') for i in result[result['Missed Buy'] == True].index]
     [p.axvline(x = i, color = '#ffdddd') for i in result[result['Missed Sell'] == True].index]
-    # [p.axvline(x = i, color = 'y') for i in result[result['Sold'] == True].index]
+
+    p.plot(to_plot['close'], label="Stock Movement")
+    p.plot(to_plot['portfolio'], label="Portfolio Value")
     p.legend()
 
     plt.show()
 
-result = pd.DataFrame.from_dict(requests.get(f"http://104.131.87.187:5000/minutely_json/{FOLDER_NAME}").json())
-print(result)
-plot_result(result)
+def main():
+    result = pd.DataFrame.from_dict(requests.get(f"http://104.131.87.187:5000/minutely_json/{FOLDER_NAME}").json())
+    plot_result(result)
+
+if __name__ == "__main__":
+    main()
