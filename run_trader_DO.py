@@ -181,7 +181,7 @@ def main():
                 sold = True
                 print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executing sell at price {round(data['Close'].iloc[-1], 2)}")
                 sell_all(round(data['Close'].iloc[-1], 2))
-            elif action > 0 and cash > 10:
+            elif action > 0 and cash > 1:
                 total_trades += 1
                 bought = True
                 print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executing buy all ({cash / round(data['Close'].iloc[-1], 2):0.2f}) at price {round(data['Close'].iloc[-1], 2)}, with cash: {cash}")
