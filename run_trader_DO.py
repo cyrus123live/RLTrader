@@ -15,10 +15,10 @@ import pytz
 import pandas as pd
 
 CASH_DIVISOR = 100
-CASH_SUBTRACTOR = 92060 # Try to work with just 10
+CASH_SUBTRACTOR = 91970 # Try to work with just 10
 STARTING_CASH = 92070 - CASH_SUBTRACTOR
 EXAMPLE_CLOSE = 580
-MODEL_NAME = "PPO_109"
+MODEL_NAME = "A2C_0"
 
 
 load_dotenv()
@@ -115,6 +115,8 @@ def main():
     starting_cash = cash
     starting_held = held
 
+    prices = pd.DataFrame()
+
     print(f"Starting trader session, cash: {cash:.2f}, held: {held:.2f}\n")
     
     while True:
@@ -159,11 +161,12 @@ def main():
                 print("Error in getting current data:", e)
                 continue
 
-            if data.shape[0] == 0:
+            if data.shape[0] == 0 or len(prices) < 20:
                 print("No data...", e)
                 continue
 
-            obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
+            # obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
+            obs = np.array([data["Close_Normalized"].iloc[-1], held / k, cash / STARTING_CASH])
             row = data.iloc[-1]
             pre_trade_cash = cash
             pre_trade_held = held
@@ -218,7 +221,7 @@ def main():
                 "Obs Cash": obs[4]
             }])
             add_to_stockdata_csv(folder_name, [data.iloc[-1].to_dict()])
-            print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash:.2f}, Held: {held:.2f}\n\n")
+            print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Trade. Cash: {cash:.2f}, Held: {held:.2f}\n\n")
 
         # except Exception as e:
         #     print("Failure in loop:", e)
