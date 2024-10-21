@@ -164,7 +164,7 @@ def main():
                     continue
 
                 obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
-                row = data.iloc[-1].tolist()
+                row = data.iloc[-1]
                 pre_trade_cash = cash
                 pre_trade_held = held
 
@@ -215,7 +215,7 @@ def main():
                     "Missed Buy": missed_buy,
                     "Missed Sell": missed_sell,
                     "Obs": obs,
-                    "Data Row": row
+                    "Data Row": row.to_list()
                 }])
                 add_to_stockdata_csv(folder_name, data.iloc[-1].to_dict())
                 print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash}, Held: {held}\n\n")
