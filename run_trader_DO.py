@@ -202,8 +202,8 @@ def main():
             cash = get_cash()
             held = get_position_quantity()
 
-            add_to_minutely_csv(folder_name, [{
-                "Time": datetime.datetime.now().timestamp(), 
+            add_to_minutely_csv(folder_name, {
+                "Time": [datetime.datetime.now().timestamp()], 
                 "Action": float(action), 
                 "Cash": pre_trade_cash,
                 "Held": pre_trade_held,
@@ -215,7 +215,7 @@ def main():
                 "Missed Sell": missed_sell,
                 "Obs Held": obs[3],
                 "Obs Cash": obs[4]
-            }])
+            })
             add_to_stockdata_csv(folder_name, data.iloc[-1].to_dict())
             print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash}, Held: {held}\n\n")
 
