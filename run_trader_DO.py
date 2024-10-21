@@ -29,7 +29,7 @@ def get_cash():
     headers = {"accept": "application/json", "APCA-API-KEY-ID": api_key, "APCA-API-SECRET-KEY": api_secret_key}
     response = requests.get("https://paper-api.alpaca.markets/v2/account", headers=headers)
 
-    return float(response.json()["cash"]) - CASH_SUBTRACTOR, 2
+    return float(response.json()["cash"]) - CASH_SUBTRACTOR
 
 def get_position():
     headers = {"accept": "application/json", "APCA-API-KEY-ID": api_key, "APCA-API-SECRET-KEY": api_secret_key}
