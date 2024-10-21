@@ -119,103 +119,108 @@ def main():
     
     while True:
 
-        try:
+        # try:
 
-            time.sleep(1)
-            current_time = datetime.datetime.now()
+        time.sleep(1)
+        current_time = datetime.datetime.now()
 
-            # Weekend
-            if current_time.weekday() == 5 or current_time.weekday() == 6:
-                print("It is the weekend, ending trader session.")
-                quit()
+        # Weekend
+        if current_time.weekday() == 5 or current_time.weekday() == 6:
+            print("It is the weekend, ending trader session.")
+            quit()
 
-            # Too late (next day UTC = 8pm New York)
-            if current_time.day != start_time.day:
-                print("Trading day over, ending trader session.")
+        # Too late (next day UTC = 8pm New York)
+        if current_time.day != start_time.day:
+            print("Trading day over, ending trader session.")
+            data = StockData.get_current_data()
+            add_to_daily_csv([{
+                "Start Time": start_time,
+                "First Close": data["Close"].iloc[0],
+                "First Held": starting_held,
+                "First Cash": starting_cash,
+                "End Time": datetime.datetime.now().timestamp(),
+                "Last Close": data["Close"].iloc[-1],
+                "Last Held": held,
+                "Last Cash": cash,
+                "Total Trades": total_trades,
+                "Missed Trades": missed_trades
+            }])
+            print("Trading day ended successfully.")
+            quit()
+
+        # Too early (8am UTC = 4 am New York)
+        if current_time.hour < 8:
+            continue
+
+        if current_time.second == 55: 
+            try:
                 data = StockData.get_current_data()
-                add_to_daily_csv([{
-                    "Start Time": start_time,
-                    "First Close": data["Close"].iloc[0],
-                    "First Held": starting_held,
-                    "First Cash": starting_cash,
-                    "End Time": datetime.datetime.now().timestamp(),
-                    "Last Close": data["Close"].iloc[-1],
-                    "Last Held": held,
-                    "Last Cash": cash,
-                    "Total Trades": total_trades,
-                    "Missed Trades": missed_trades
-                }])
-                print("Trading day ended successfully.")
-                quit()
-
-            # Too early (8am UTC = 4 am New York)
-            if current_time.hour < 8:
+            except Exception as e:
+                print("Error in getting current data:", e)
                 continue
 
-            # every 1st second of each minute
-            if current_time.second == 55: 
-                try:
-                    data = StockData.get_current_data()
-                except Exception as e:
-                    print("Error in getting current data:", e)
-                    continue
+            if data.shape[0] == 0:
+                print("No data...", e)
+                continue
 
-                if data.shape[0] == 0:
-                    print("No data...", e)
-                    continue
+            obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
+            row = data.iloc[-1]
+            pre_trade_cash = cash
+            pre_trade_held = held
 
-                obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
+            # print(obs)
 
-                # print(obs)
+            action = model.predict(obs, deterministic=True)[0][0]
+            bought = False
+            missed_buy = False
+            sold = False
+            missed_sell = False
 
-                action = model.predict(obs, deterministic=True)[0][0]
-                bought = False
-                missed_buy = False
-                sold = False
-                missed_sell = False
+            if action < 0 and held > 0:
+                total_trades += 1
+                sold = True
+                print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executing sell at price {round(data['Close'].iloc[-1], 2)}")
+                sell_all(round(data['Close'].iloc[-1], 2))
+            elif action > 0 and cash > 10:
+                total_trades += 1
+                bought = True
+                print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executing buy all ({cash / round(data['Close'].iloc[-1], 2):0.2f}) at price {round(data['Close'].iloc[-1], 2)}, with cash: {cash}")
+                buy_all(round(data['Close'].iloc[-1], 2), cash)
+            else:
+                print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Holding at price {round(data['Close'].iloc[-1], 2)}")
 
-                if action < 0 and held > 0:
-                    total_trades += 1
-                    sold = True
-                    print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executing sell at price {round(data['Close'].iloc[-1], 2)}")
-                    sell_all(round(data['Close'].iloc[-1], 2))
-                elif action > 0 and cash > 10:
-                    total_trades += 1
-                    bought = True
-                    print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executing buy all ({cash / round(data['Close'].iloc[-1], 2):0.2f}) at price {round(data['Close'].iloc[-1], 2)}, with cash: {cash}")
-                    buy_all(round(data['Close'].iloc[-1], 2), cash)
-                else:
-                    print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Holding at price {round(data['Close'].iloc[-1], 2)}")
+            time.sleep(40)
+            cancel_output = cancel_all()
+            if len(cancel_output) > 0: # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
+                missed_trades += 1 
+                if bought: missed_buy = True
+                if sold: missed_sell = True
+                print("** Missed Trade **")
+            time.sleep(5)
 
-                time.sleep(40)
-                cancel_output = cancel_all()
-                if len(cancel_output) > 0: # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
-                    missed_trades += 1 
-                    if bought: missed_buy = True
-                    if sold: missed_sell = True
-                    print("** Missed Trade **")
-                time.sleep(5)
+            # Update csv
+            cash = get_cash()
+            held = get_position_quantity()
 
-                # Update csv
-                cash = get_cash()
-                held = get_position_quantity()
+            add_to_minutely_csv(folder_name, [{
+                "Time": datetime.datetime.now().timestamp(), 
+                "Action": float(action), 
+                "Cash": pre_trade_cash,
+                "Held": pre_trade_held,
+                "Resulting Cash": cash, 
+                "Resulting Held": held,
+                "Bought": bought,
+                "Sold": sold,
+                "Missed Buy": missed_buy,
+                "Missed Sell": missed_sell,
+                "Obs Held": obs[3],
+                "Obs Cash": obs[4]
+            }])
+            add_to_stockdata_csv(folder_name, data.iloc[-1].to_dict())
+            print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash}, Held: {held}\n\n")
 
-                add_to_minutely_csv(folder_name, [{
-                    "Time": datetime.datetime.now().timestamp(), 
-                    "Close": data.iloc[-1]["Close"], 
-                    "Action": float(action), 
-                    "Resulting Cash": cash, 
-                    "Resulting Held": held,
-                    "Bought": bought,
-                    "Sold": sold,
-                    "Missed Buy": missed_buy,
-                    "Missed Sell": missed_sell
-                }])
-                add_to_stockdata_csv(folder_name, data.iloc[-1].to_dict()) # Not tested
-                print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash}, Held: {held}\n\n")
-
-        except Exception as e:
-            print("Failure in loop:", e)
+        # except Exception as e:
+        #     print("Failure in loop:", e)
 
 if __name__ == "__main__":
     main()
