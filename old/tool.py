@@ -10,7 +10,7 @@ import numpy as np
 import StockData
 
 MODEL_NAME = "PPO_109"
-FOLDER_NAME = "2024-10-18"
+FOLDER_NAME = "2024-10-21"
 
 # Returns a history dataframe
 def test_model_manually(model, test_data, starting_cash = 1000000):
@@ -47,7 +47,7 @@ def plot_result(result):
     # model = A2C.load("/root/RLTrader/models/" + MODEL_NAME)
 
     result.index = [dt.datetime.fromtimestamp(t) for t in result["Time"]]
-    # result["Close"] = result["Close"].shift(-1)
+    result["Close"] = result["Close"].shift(-1)
     print(result)
 
     to_plot = pd.DataFrame(index=result.index)

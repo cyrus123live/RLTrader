@@ -152,7 +152,6 @@ def main():
             if current_time.hour < 8:
                 continue
 
-            # every 1st second of each minute
             if current_time.second == 55: 
                 try:
                     data = StockData.get_current_data()
@@ -165,6 +164,9 @@ def main():
                     continue
 
                 obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
+                row = data.iloc[-1].tolist()
+                pre_trade_cash = cash
+                pre_trade_held = held
 
                 # print(obs)
 
@@ -202,16 +204,20 @@ def main():
 
                 add_to_minutely_csv(folder_name, [{
                     "Time": datetime.datetime.now().timestamp(), 
-                    "Close": data.iloc[-1]["Close"], 
+                    "Close": row["Close"], 
                     "Action": float(action), 
+                    "Cash": pre_trade_cash,
+                    "Held": pre_trade_held,
                     "Resulting Cash": cash, 
                     "Resulting Held": held,
                     "Bought": bought,
                     "Sold": sold,
                     "Missed Buy": missed_buy,
-                    "Missed Sell": missed_sell
+                    "Missed Sell": missed_sell,
+                    "Obs": obs,
+                    "Data Row": row
                 }])
-                add_to_stockdata_csv(folder_name, data.iloc[-1].to_dict()) # Not tested
+                add_to_stockdata_csv(folder_name, data.iloc[-1].to_dict())
                 print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash}, Held: {held}\n\n")
 
         except Exception as e:
