@@ -203,7 +203,8 @@ def main():
             held = get_position_quantity()
 
             add_to_minutely_csv(folder_name, [{
-                "Time": datetime.datetime.now().timestamp(), 
+                "Time": datetime.datetime.now().timestamp(),
+                "Close": row["Close"],
                 "Action": float(action), 
                 "Cash": pre_trade_cash,
                 "Held": pre_trade_held,
