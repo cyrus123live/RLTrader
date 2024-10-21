@@ -192,7 +192,7 @@ def main():
             else:
                 print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Holding at price {round(data['Close'].iloc[-1], 2)}")
 
-            time.sleep(30)
+            time.sleep(25)
             cancel_output = cancel_all()
             if len(cancel_output) > 0: # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
                 missed_trades += 1 
