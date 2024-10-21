@@ -152,7 +152,7 @@ def main():
         if current_time.hour < 8:
             continue
 
-        if current_time.second == 55: 
+        if current_time.second == 20 or current_time.second == 40 or current_time.second == 0: 
             try:
                 data = StockData.get_current_data()
             except Exception as e:
@@ -189,14 +189,14 @@ def main():
             else:
                 print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Holding at price {round(data['Close'].iloc[-1], 2)}")
 
-            time.sleep(40)
+            time.sleep(10)
             cancel_output = cancel_all()
             if len(cancel_output) > 0: # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
                 missed_trades += 1 
                 if bought: missed_buy = True
                 if sold: missed_sell = True
                 print("** Missed Trade **")
-            time.sleep(5)
+            time.sleep(3)
 
             # Update csv
             cash = get_cash()
