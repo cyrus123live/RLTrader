@@ -161,8 +161,8 @@ def main():
                 print("Error in getting current data:", e)
                 continue
 
-            if data.shape[0] == 0 or len(prices) < 20:
-                print("No data...", e)
+            if data.shape[0] == 0:
+                print("No data...")
                 continue
 
             # obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
