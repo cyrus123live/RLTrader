@@ -212,9 +212,9 @@ def main():
                     "Bought": bought,
                     "Sold": sold,
                     "Missed Buy": missed_buy,
-                    "Missed Sell": missed_sell,
-                    "Obs Held": obs[3],
-                    "Obs Cash": obs[4]
+                    "Missed Sell": missed_sell
+                    # "Obs Held": obs[3],
+                    # "Obs Cash": obs[4]
                 }])
                 add_to_stockdata_csv(folder_name, data.iloc[-1].to_dict())
                 print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash}, Held: {held}\n\n")
