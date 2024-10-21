@@ -80,21 +80,21 @@ def buy_all(price, cash):
 def buy(qty, price):
     return make_order(qty, "buy", price)
 
-def write_df_to_csv(file_name, dict):
-    df = pd.DataFrame(dict)
+def write_df_to_csv(file_name, data_dict):
+    df = pd.DataFrame(data_dict)
     if not os.path.isfile(file_name):
         df.to_csv(file_name, mode="a", index=False)
     else:
         df.to_csv(file_name, mode="a", index=False, header=False)
 
-def add_to_stockdata_csv(folder_name, dict):
-    write_df_to_csv(f"/root/RLTrader/csv/{folder_name}/stockdata.csv", dict)
+def add_to_stockdata_csv(folder_name, data_dict):
+    write_df_to_csv(f"/root/RLTrader/csv/{folder_name}/stockdata.csv", data_dict)
 
-def add_to_minutely_csv(folder_name, dict):
-    write_df_to_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv", dict)
+def add_to_minutely_csv(folder_name, data_dict):
+    write_df_to_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv", data_dict)
 
-def add_to_daily_csv(dict):
-    write_df_to_csv(f"/root/RLTrader/csv/daily.csv", dict)
+def add_to_daily_csv(data_dict):
+    write_df_to_csv(f"/root/RLTrader/csv/daily.csv", data_dict)
     
 
 def main():
@@ -202,8 +202,8 @@ def main():
             cash = get_cash()
             held = get_position_quantity()
 
-            add_to_minutely_csv(folder_name, {
-                "Time": [datetime.datetime.now().timestamp()], 
+            add_to_minutely_csv(folder_name, [{
+                "Time": datetime.datetime.now().timestamp(), 
                 "Action": float(action), 
                 "Cash": pre_trade_cash,
                 "Held": pre_trade_held,
@@ -215,8 +215,8 @@ def main():
                 "Missed Sell": missed_sell,
                 "Obs Held": obs[3],
                 "Obs Cash": obs[4]
-            })
-            add_to_stockdata_csv(folder_name, data.iloc[-1].to_dict())
+            }])
+            add_to_stockdata_csv(folder_name, [data.iloc[-1].to_dict()])
             print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash}, Held: {held}\n\n")
 
         # except Exception as e:
