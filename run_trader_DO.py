@@ -164,7 +164,7 @@ def main():
                     continue
 
                 obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
-                row = data.iloc[-1]
+                row = data.iloc[-1].to_list()
                 pre_trade_cash = cash
                 pre_trade_held = held
 
@@ -204,7 +204,7 @@ def main():
 
                 add_to_minutely_csv(folder_name, [{
                     "Time": datetime.datetime.now().timestamp(), 
-                    "Close": row["Close"], 
+                    "Close": row[0], 
                     "Action": float(action), 
                     "Cash": pre_trade_cash,
                     "Held": pre_trade_held,
