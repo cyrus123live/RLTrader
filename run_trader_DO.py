@@ -29,7 +29,7 @@ def get_cash():
     headers = {"accept": "application/json", "APCA-API-KEY-ID": api_key, "APCA-API-SECRET-KEY": api_secret_key}
     response = requests.get("https://paper-api.alpaca.markets/v2/account", headers=headers)
 
-    return round(float(response.json()["cash"]) - CASH_SUBTRACTOR, 2)
+    return float(response.json()["cash"]) - CASH_SUBTRACTOR, 2
 
 def get_position():
     headers = {"accept": "application/json", "APCA-API-KEY-ID": api_key, "APCA-API-SECRET-KEY": api_secret_key}
@@ -115,7 +115,7 @@ def main():
     starting_cash = cash
     starting_held = held
 
-    print(f"Starting trader session, cash: {cash}, held: {held}\n")
+    print(f"Starting trader session, cash: {cash:.2f}, held: {held:.2f}\n")
     
     while True:
 
@@ -184,7 +184,7 @@ def main():
             elif action > 0 and cash > 1:
                 total_trades += 1
                 bought = True
-                print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executing buy all ({cash / round(data['Close'].iloc[-1], 2):0.2f}) at price {round(data['Close'].iloc[-1], 2)}, with cash: {cash}")
+                print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Executing buy all ({cash / round(data['Close'].iloc[-1], 2):.2f}) at price {round(data['Close'].iloc[-1], 2)}, with cash: {cash:.2f}")
                 buy_all(round(data['Close'].iloc[-1], 2), cash)
             else:
                 print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Holding at price {round(data['Close'].iloc[-1], 2)}")
@@ -218,7 +218,7 @@ def main():
                 "Obs Cash": obs[4]
             }])
             add_to_stockdata_csv(folder_name, [data.iloc[-1].to_dict()])
-            print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash}, Held: {held}\n\n")
+            print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Ended Minute. Cash: {cash:.2f}, Held: {held:.2f}\n\n")
 
         # except Exception as e:
         #     print("Failure in loop:", e)
