@@ -80,18 +80,18 @@ def buy_all(price, cash):
 def buy(qty, price):
     return make_order(qty, "buy", price)
 
-def write_df_to_csv(file_name, dict):
+def write_df_to_csv(file_name, dict, index):
     df = pd.DataFrame(dict)
     if not os.path.isfile(file_name):
-        df.to_csv(file_name, mode="a", index=False)
+        df.to_csv(file_name, mode="a", index_label=index)
     else:
-        df.to_csv(file_name, mode="a", index=False, header=False)
+        df.to_csv(file_name, mode="a", header=False, index_label=index)
 
 def add_to_stockdata_csv(folder_name, dict):
     write_df_to_csv(f"/root/RLTrader/csv/{folder_name}/stockdata.csv", dict)
 
 def add_to_minutely_csv(folder_name, dict):
-    write_df_to_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv", dict)
+    write_df_to_csv(f"/root/RLTrader/csv/{folder_name}/minutely.csv", dict, "Time")
 
 def add_to_daily_csv(dict):
     write_df_to_csv(f"/root/RLTrader/csv/daily.csv", dict)
