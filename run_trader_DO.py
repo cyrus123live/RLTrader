@@ -15,7 +15,7 @@ import pytz
 import pandas as pd
 
 CASH_DIVISOR = 100
-CASH_SUBTRACTOR = 91000 # Try to work with just 1000
+CASH_SUBTRACTOR = 91990 # Try to work with just 10
 STARTING_CASH = 92000 - CASH_SUBTRACTOR
 EXAMPLE_CLOSE = 580
 MODEL_NAME = "PPO_109"
