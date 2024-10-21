@@ -153,7 +153,7 @@ def main():
                 continue
 
             # every 1st second of each minute
-            if current_time.second == 1: 
+            if current_time.second == 55: 
                 try:
                     data = StockData.get_current_data()
                 except Exception as e:
@@ -165,6 +165,8 @@ def main():
                     continue
 
                 obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
+
+                # print(obs)
 
                 action = model.predict(obs, deterministic=True)[0][0]
                 bought = False
