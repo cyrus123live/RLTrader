@@ -1,5 +1,4 @@
 from stable_baselines3 import A2C
-from stable_baselines3 import PPO
 from TradingEnv import TradingEnv
 import StockData
 import numpy as np
@@ -19,7 +18,7 @@ CASH_DIVISOR = 100
 CASH_SUBTRACTOR = 91970 # Try to work with just 10
 STARTING_CASH = 92070 - CASH_SUBTRACTOR
 EXAMPLE_CLOSE = 580
-MODEL_NAME = "PPO_109"
+MODEL_NAME = "A2C_0"
 
 
 load_dotenv()
@@ -105,7 +104,7 @@ def main():
     os.makedirs(f"/root/RLTrader/csv/{folder_name}", exist_ok=True)
 
     # Parameters
-    model = PPO.load("/root/RLTrader/models/" + MODEL_NAME)
+    model = A2C.load("/root/RLTrader/models/" + MODEL_NAME)
     k = STARTING_CASH / EXAMPLE_CLOSE
     held = get_position_quantity()
     cash = get_cash()
@@ -115,6 +114,8 @@ def main():
     total_trades = 0
     starting_cash = cash
     starting_held = held
+
+    prices = pd.DataFrame()
 
     print(f"Starting trader session, cash: {cash:.2f}, held: {held:.2f}\n")
     
@@ -153,7 +154,7 @@ def main():
         if current_time.hour < 8:
             continue
 
-        if current_time.second == 50: 
+        if current_time.second == 20 or current_time.second == 50: 
             try:
                 data = StockData.get_current_data()
             except Exception as e:
@@ -164,7 +165,8 @@ def main():
                 print("No data...")
                 continue
 
-            obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
+            # obs = np.array(data[["Close_Normalized", "Change_Normalized", "D_HL_Normalized"]].iloc[-1].tolist() + [held / k, cash / STARTING_CASH])
+            obs = np.array([data["Close_Normalized"].iloc[-1], held / k, cash / STARTING_CASH])
             row = data.iloc[-1]
             pre_trade_cash = cash
             pre_trade_held = held
@@ -190,7 +192,7 @@ def main():
             else:
                 print(f"{current_time.strftime('%Y-%m-%d %H:%M')} Holding at price {round(data['Close'].iloc[-1], 2)}")
 
-            time.sleep(45)
+            time.sleep(25)
             cancel_output = cancel_all()
             if len(cancel_output) > 0: # cancel orders if not made in 25 seconds, so that we can get up to date info and safely move to next minute
                 missed_trades += 1 
